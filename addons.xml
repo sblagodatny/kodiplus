@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+
+<addon id="plugin.video.youtubeplus"
+version="1.0"
+name="YouTube+"
+provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.10"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>video</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">YouTube</summary>
+  <description lang="en">YouTube</description>
+</extension>
+</addon>
+
+</addons>
