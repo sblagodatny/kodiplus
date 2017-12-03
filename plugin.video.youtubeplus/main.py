@@ -127,14 +127,11 @@ def handlerPlay():
 	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}
 	
 	if _params['privacy'] == 'Public' and _params['live'] == 'False' and _useDash=='true':
-		xbmcgui.Dialog().ok('Error', 'use dash')
-
 		dash = youtube.getDash(_params['id'], s)	
 		item.setPath(dash )
 		item.setProperty('inputstreamaddon', 'inputstream.adaptive')
 		item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
 	else:
-		xbmcgui.Dialog().ok('Error', 'no dash')
 		streams = youtube.getStreams(_params['id'], s)
 		itag = util.firstMatch(youtube.itagsVod, streams.keys())
 		if itag is None:
