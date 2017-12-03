@@ -12,7 +12,7 @@ provider-name="Stas Blagodatny">
   <provides>video</provides>
 </extension>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en">YouTube</summary>
-  <description lang="en">YouTube</description>
+  <summary lang="en">YouTube+</summary>
+  <description lang="en">YouTube+</description>
 </extension>
 </addon>
