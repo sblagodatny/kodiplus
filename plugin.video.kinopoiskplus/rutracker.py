@@ -82,34 +82,34 @@ def search (session, str, strict=None):
 		'oop': 1
 	}
 	data = BeautifulSoup(session.post (url = url + '?' + urllib.urlencode(dataGet), data = dataPost).content, "html.parser")
-	startvalues=['0']
-	for tag in data.find(class_='bottom_info').find_all(class_='pg'):
-		value = tag['href'].split('start=')[1].split('"')[0]
-		if value not in startvalues:
-			startvalues.append(value)
+#	startvalues=['0']
+#	for tag in data.find(class_='bottom_info').find_all(class_='pg'):
+#		value = tag['href'].split('start=')[1].split('"')[0]
+#		if value not in startvalues:
+#			startvalues.append(value)
 	
 	result = []	
-	for startvalue in startvalues:
-		dataGet['start'] = startvalue
-		data = BeautifulSoup(session.post (url = url + '?' + urllib.urlencode(dataGet), data = dataPost).content, "html.parser")
-		for tag in data.find('tbody').find_all(class_="tCenter"):
-			try:
-				seeds = tag.find(class_="seedmed").get_text()
-			except:
-				seeds = '0'
-			if seeds == '0':
-				continue
-			subtag = tag.find(class_="tLink")
-			name = subtag.get_text()
-			if not verifyStrictExpr(name, strict):
-				continue			
-			result.append({
-				'id': subtag['data-topic_id'], 	
-				'name': name,
-				'url': 'https://rutracker.org/forum/dl.php?t=' + subtag['data-topic_id'],
-				'seeds': seeds,
-				'size': tag.find(class_="tor-size").find('u').get_text()
-			})
+#	for startvalue in startvalues:
+#		dataGet['start'] = startvalue
+#		data = BeautifulSoup(session.post (url = url + '?' + urllib.urlencode(dataGet), data = dataPost).content, "html.parser")
+	for tag in data.find('tbody').find_all(class_="tCenter"):
+		try:
+			seeds = tag.find(class_="seedmed").get_text()
+		except:
+			seeds = '0'
+		if seeds == '0':
+			continue
+		subtag = tag.find(class_="tLink")
+		name = subtag.get_text()
+		if not verifyStrictExpr(name, strict):
+			continue			
+		result.append({
+			'id': subtag['data-topic_id'], 	
+			'name': name,
+			'url': 'https://rutracker.org/forum/dl.php?t=' + subtag['data-topic_id'],
+			'seeds': seeds,
+			'size': tag.find(class_="tor-size").find('u').get_text()
+		})
 			
 	return (result)
 	

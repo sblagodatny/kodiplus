@@ -159,7 +159,9 @@ def getTorrentVideoFilesList(torrent):
 			item.setPath(path+name)
 			info = xbmcdb.getVideoInfo(name,path)
 			item.setInfo( type="Video", infoLabels=info )
-			item.setProperty('code',str({'idFile': file['id'], 'playCount': info['playcount'], 'wanted': file['wanted']}))			
+			if info is None:
+				info = {'playcount':0}
+			item.setProperty('code',str({'idFile': file['id'], 'playCount': info['playcount'], 'wanted': file['wanted']}))						
 			result.append(item)
 	return result
 	
@@ -222,10 +224,11 @@ def handlerAddTorrent():
 	c = cache.init(_cacheFolder)
 	details=cache.get(c, _params['id'])
 	searchStr = details['name']
-	strictDirectors = []
-	for director in details['directors']:
-		strictDirectors.append(director['name'])
-	strict = [strictDirectors]
+#	strictDirectors = []
+#	for director in details['directors']:
+#		strictDirectors.append(director['name'])
+#	strict = [strictDirectors]
+	strict = []
 	
 	if 'seasons' in details.keys():
 		if details['seasons'] > 1:
@@ -240,13 +243,13 @@ def handlerAddTorrent():
 			strict.append(strictSeason)
 
 
-	torrents = rutracker.search(s, searchStr, strict)
+#	torrents = rutracker.search(s, searchStr, strict)
 	
-#	torrents = []
-#	for director in details['directors']:	
-#		t = rutracker.search(s, searchStr + ' ' + director['name'])
-#		if len(t)>len(torrents):
-#			torrents = t
+	torrents = []
+	for director in details['directors']:	
+		t = rutracker.search(s, searchStr + ' ' + director['name'], strict)
+		if len(t)>len(torrents):
+			torrents = t
 	torrentsFiltered = []
 	for torrent in torrents:
 		exists = False
@@ -453,9 +456,9 @@ def handlerDownloads():
 	
 def handlerRoot():	
 		
-	c = cache.init(_cacheFolder)
-	cache.purge(c, _cacheAge)
-	cache.flush(c, _cacheFolder)
+#	c = cache.init(_cacheFolder)
+#	cache.purge(c, _cacheAge)
+#	cache.flush(c, _cacheFolder)
 	
 	
 	pathImg = _path + '/resources/img/'	
