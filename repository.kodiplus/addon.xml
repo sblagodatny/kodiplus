@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.kodiplus" name="Kodi Plus Repository" version="1.0" provider-name="Stas Blagodatny">
+        <extension point="xbmc.addon.repository" name="Kodi Plus Repository">
+                <info compressed="false">https://github.com/sblagodatny/kodiplus/raw/master/addons.xml</info>
+                <checksum>https://github.com/sblagodatny/kodiplus/raw/master/addons.xml.md5</checksum>   
+				<datadir zip="true">https://github.com/sblagodatny/kodiplus/raw/master/build</datadir>								
+        </extension>
+        <extension point="xbmc.addon.metadata">
+                <summary>Kodi Plus Repository</summary>
+                <description>Kodi Plus Repository</description>
+                <disclaimer></disclaimer>
+                <platform>all</platform>
+        </extension>
+</addon>

@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
 
-<addon id="plugin.video.youtubeplus"
-version="1.0"
-name="YouTube+"
-provider-name="Stas Blagodatny">
+<addon id="plugin.video.youtubeplus" version="1.0" name="YouTube+" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>
@@ -14,8 +11,8 @@ provider-name="Stas Blagodatny">
   <provides>video</provides>
 </extension>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en">YouTube</summary>
-  <description lang="en">YouTube</description>
+  <summary lang="en">YouTube+</summary>
+  <description lang="en">YouTube+</description>
 </extension>
 </addon>
 
