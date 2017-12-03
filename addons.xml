@@ -16,4 +16,62 @@
 </extension>
 </addon>
 
+<addon id="plugin.image.gphotos" version="1.0" name="Google Photos" provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.10"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>image</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">Google Photos</summary>
+  <description lang="en">Google Photos</description>
+</extension>
+</addon>
+
+<addon id="plugin.video.kinopoiskplus" version="1.0" name="КиноПоиск+" provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.10"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>video</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">КиноПоиск+</summary>
+  <description lang="en">КиноПоиск+</description>
+</extension>
+</addon>
+
+<addon id="plugin.program.epgscrapper" version="1.0" name="EPG Scrapper" provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.11"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>executable</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">EPG Scrapper</summary>
+  <description lang="en">EPG Scrapper</description>
+</extension>
+</addon>
+
+<addon id="service.urlresolver" name="URL Resolver" version="1.0" provider-name="Stas Blagodatny">
+    <requires>
+        <import addon="xbmc.python" version="2.7.10"/>
+		<import addon="script.module.requests"/>
+		<import addon="script.module.beautifulsoup4"/>
+    </requires>
+    <extension point="xbmc.service" library="service.py" />
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en">URL Resolver</summary>
+		<description lang="en">URL Resolver</description>
+    </extension>
+</addon>
+
 </addons>

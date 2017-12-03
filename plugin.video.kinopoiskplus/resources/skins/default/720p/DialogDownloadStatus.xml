@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<window type="dialog">
+	<include>Animation_DialogPopupOpenClose</include>
+	<include file="Defaults.xml" />
+	<controls>
+		<control type="group">
+			<height>250</height>
+			<width>600</width>
+			<centertop>50%</centertop>
+			<centerleft>50%</centerleft>			
+			<include content="DialogBackgroundCommons">				
+				<param name="header_label" value="Download Status" />
+				<param name="header_id" value="100" />
+			</include>
+			
+			<control type="label" id="110">
+				<description>Completed Label</description>
+				<label>Completed</label>
+				<left>20</left>
+				<top>110</top>
+				<height>30</height>
+				<width>560</width>
+				<align>center</align>
+				<aligny>top</aligny>
+				<scroll>true</scroll>				
+			</control>	
+
+			<control type="label" id="111">
+				<description>Details Label</description>
+				<label>Details</label>
+				<left>20</left>
+				<top>170</top>
+				<height>30</height>
+				<width>560</width>
+				<align>center</align>
+				<aligny>top</aligny>
+				<scroll>true</scroll>				
+			</control>		
+
+		</control>						
+	</controls>
+</window>

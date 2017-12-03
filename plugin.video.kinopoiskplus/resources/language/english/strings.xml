@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<strings>
+
+	<string id="32000">Cookies</string>
+	<string id="32001">Cache</string>
+	<string id="32002">Kinopoisk</string>
+	<string id="32003">Rutracker</string>
+	<string id="32004">Transmission</string>
+	
+	<string id="32010">User</string>
+	<string id="32011">Password</string>
+	<string id="32012">URL</string>
+	<string id="32013">Folder</string>
+	<string id="32014">Age</string>
+
+	
+	
+</strings>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<window type="dialog">
+	<defaultcontrol>118</defaultcontrol>
+	<include>Animation_DialogPopupOpenClose</include>
+	<include file="Defaults.xml" />
+	<controls>
+		<control type="group">
+			<height>600</height>
+			<width>800</width>
+			<centertop>50%</centertop>
+			<centerleft>50%</centerleft>			
+			<include content="DialogBackgroundCommons">				
+				<param name="header_label" value="Поиск" />
+				<param name="header_id" value="100" />
+			</include>
+
+			<control type="button" id = "110">
+				<label>Название</label>
+				<left>20</left>
+				<top>110</top>
+				<width>200</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>118</onup>
+				<ondown>112</ondown>
+				<onleft>118</onleft>
+				<onright>112</onright>
+			</control>
+			<control type="label" id="111">
+				<label>Название</label>
+				<left>250</left>
+				<top>110</top>
+				<height>90</height>
+				<width>530</width>
+				<align>center</align>
+				<aligny>center</aligny>
+				<scroll>true</scroll>
+			</control>	
+			
+			<control type="button" id = "112">
+				<label>Жанр</label>
+				<left>20</left>
+				<top>200</top>
+				<width>200</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>110</onup>
+				<ondown>114</ondown>
+				<onleft>110</onleft>
+				<onright>114</onright>
+			</control>
+			<control type="label" id="113">
+				<label>Жанр</label>
+				<left>250</left>
+				<top>200</top>
+				<height>90</height>
+				<width>530</width>
+				<align>center</align>
+				<aligny>center</aligny>
+				<scroll>true</scroll>
+			</control>	
+			
+			<control type="button" id = "114">
+				<label>Период</label>
+				<left>20</left>
+				<top>290</top>
+				<width>200</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>112</onup>
+				<ondown>116</ondown>
+				<onleft>112</onleft>
+				<onright>116</onright>
+			</control>
+			<control type="label" id="115">
+				<label>Период</label>
+				<left>250</left>
+				<top>290</top>
+				<height>90</height>
+				<width>530</width>
+				<align>center</align>
+				<aligny>center</aligny>
+				<scroll>true</scroll>
+			</control>	
+			
+			<control type="button" id = "116">
+				<label>Страна</label>
+				<left>20</left>
+				<top>380</top>
+				<width>200</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>114</onup>
+				<ondown>118</ondown>
+				<onleft>114</onleft>
+				<onright>118</onright>
+			</control>
+			<control type="label" id="117">
+				<label>Страна</label>
+				<left>250</left>
+				<top>380</top>
+				<height>90</height>
+				<width>530</width>
+				<align>center</align>
+				<aligny>center</aligny>
+				<scroll>true</scroll>
+			</control>	
+			
+			<control type="button" id = "118">
+				<label>Поиск Фильмов</label>
+				<left>80</left>
+				<top>500</top>
+				<width>300</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>116</onup>
+				<ondown>110</ondown>
+				<onleft>119</onleft>
+				<onright>119</onright>
+			</control>
+			<control type="button" id = "119">
+				<label>Поиск Сериалов</label>
+				<left>420</left>
+				<top>500</top>
+				<width>300</width>
+				<height>90</height>
+				<align>center</align>
+				<onup>116</onup>
+				<ondown>110</ondown>
+				<onleft>118</onleft>
+				<onright>118</onright>
+			</control>
+			
+		</control>
+	</controls>
+</window>

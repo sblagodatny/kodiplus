@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+	
+	<category label="32000">
+		<setting id="cookiesFolder" type="folder" label="32013"/>
+    </category>
+	
+	<category label="32001">
+		<setting id="cacheFolder" type="folder" label="32013"/>
+		<setting id="cacheAge" type="number" label="32014" default="90"/>
+    </category>
+	
+	<category label="32002">
+		<setting id="kinopoiskUser" type="text" label="32010"  />
+		<setting id="kinopoiskPassword" type="text" label="32011" option="hidden" />		
+    </category>
+	
+	<category label="32003">
+		<setting id="rutrackerUser" type="text" label="32010"  />
+		<setting id="rutrackerPassword" type="text" label="32011" option="hidden" />		
+    </category>
+	
+	<category label="32004">
+		<setting id="transmissionUrl" type="text" label="32012" default="http://127.0.0.1:9091/transmission/rpc"/>
+		<setting id="transmissionDownloadsFolder" type="folder" label="32013"/>				
+    </category>
+	
+</settings>
