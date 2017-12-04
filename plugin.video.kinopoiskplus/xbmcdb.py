@@ -15,7 +15,8 @@ def getDBFile(content):
 def getVideoInfo(file, path):
 	db = sqlite.connect(dbPath + '/' + getDBFile('videos'))
 	try:
-		result = db.execute("SELECT files.playCount, files.lastPlayed, streamdetails.iVideoDuration FROM files, path, streamdetails WHERE files.idPath = path.idPath AND files.idFile = streamdetails.idFile AND files.strFilename = ? AND path.strPath = ?",(file,path)).fetchone()
+#		result = db.execute("SELECT files.playCount, files.lastPlayed, streamdetails.iVideoDuration FROM files, path, streamdetails WHERE files.idPath = path.idPath AND files.idFile = streamdetails.idFile AND files.strFilename = ? AND path.strPath = ?",(file,path)).fetchone()
+		result = db.execute("SELECT files.playCount, files.lastPlayed, streamdetails.iVideoDuration FROM files, path, streamdetails WHERE files.idPath = path.idPath AND files.idFile = streamdetails.idFile AND files.strFilename = ? AND path.strPath LIKE ?",(file,'%'+path)).fetchone()
 		info = {
 			'playcount': result[0],
 			'lastplayed': result[1],

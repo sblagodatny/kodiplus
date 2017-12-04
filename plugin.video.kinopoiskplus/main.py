@@ -153,11 +153,13 @@ def getTorrentVideoFilesList(torrent):
 	files = sorted(torrent['files'], key=lambda k: k['name']) 
 	for file in files:
 		name = util.fileName(file['name'])
-		path = _transmissionDownloadsFolder + file['name'].replace(name,'')	
+		pathOrig = file['name'].replace(name,'')
+		path = _transmissionDownloadsFolder + pathOrig
 		if util.fileExt(name.lower()) in ['avi','mkv','mp4']:
 			item=xbmcgui.ListItem(name)
 			item.setPath(path+name)
-			info = xbmcdb.getVideoInfo(name,path)
+#			info = xbmcdb.getVideoInfo(name,path)
+			info = xbmcdb.getVideoInfo(name, pathOrig)
 			item.setInfo( type="Video", infoLabels=info )
 			if info is None:
 				info = {'playcount':0}
