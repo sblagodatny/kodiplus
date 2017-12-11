@@ -41,6 +41,6 @@ strnew = str.replace(cversion, version)
 replaceInFile(addonSrcPath + '/addon.xml', str, strnew)		
 replaceInFile(basePath + '/addons.xml', str, strnew)
 createMD5()
-buildFile = addonBuildPath + '/' + addon + '-' + version + '.zip'
 removeFiles(addonBuildPath,'zip')
+buildFile = addonBuildPath + '/' + addon + '-' + version
 shutil.make_archive(buildFile, 'zip', basePath + '/src/', addon)
