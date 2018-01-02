@@ -44,41 +44,47 @@ _cacheAge = int(_addon.getSetting('cacheAge'))
 reload(sys)  
 sys.setdefaultencoding('utf8')	
 
-	
-	
-def getDownloads(downloads, id, hashString = None):		
+
+
+def searchDownloads(downloads=None, id=None, season=None, hashString = None):
 	if downloads is None:
-		s = util.Session(_cookiesFolder)
+		s = util.Session(_cookiesFolder)	
 		downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
 	result = []
 	for download in downloads:
 		if 'metadata' not in download.keys():
 			continue
-		if download['metadata']['id'] == id:
-			if hashString is None or hashString == download['torrent']['hashString']:
-				result.append(download)
-	return result
-				
+		if id is not None:
+			if download['metadata']['id'] != id:
+				continue
+		if season is not None:
+			if download['metadata']['season'] != season:
+				continue	
+		if hashString is not None: 
+			if download['torrent']['hashString'] != hashString:
+				continue
+		result.append(download)
+	return result	
+	
+
 	
 def listContent(content, folder=-1):
 	s = util.Session(_cookiesFolder)
 	c = cache.init(_cacheFolder)	
+	downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
 	xbmcplugin.setContent(_handleId, 'movies')
 	for id in content:
-		params = {'id': id, 'handler': 'ListTorrents'}
 		contextMenuItems = []
 		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Info'}) + ')'
-		contextMenuItems.append(('Информация',contextCmd))
+		contextMenuItems.append(('Info',contextCmd))
 		if folder == -1:
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FolderAdd', 'id': id}) + ')'
-			contextMenuItems.append(('Папки',contextCmd))
+			contextMenuItems.append(('Add to Folder',contextCmd))
 		else:
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FolderRemove', 'id': id, 'folder': folder}) + ')'
-			contextMenuItems.append(('Удалить',contextCmd))
+			contextMenuItems.append(('Remove from Folder',contextCmd))
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FolderMove', 'id': id, 'folder': folder}) + ')'
-			contextMenuItems.append(('Переместить',contextCmd))
-		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Rate', 'id': id}) + ')'
-		contextMenuItems.append(('Оценка',contextCmd))		
+			contextMenuItems.append(('Move to Folder',contextCmd))	
 		infoLabels = {'playCount':0}	
 		details=cache.get(c, id)
 		if details is None:
@@ -88,21 +94,48 @@ def listContent(content, folder=-1):
 		if 'nameOrig' in details.keys():
 			name = name + ' / ' + details['nameOrig']
 		infoLabels['plot'] = details['description']
-		infoLabels['rating'] = float(details['rating'])
+		if details['rating'] != '':
+			infoLabels['rating'] = float(details['rating'])
 		infoLabels['genre'] = ' '.join(details['genre'])
 		infoLabels['year'] = details['year']
 		infoLabels['country'] = ' '.join(details['country'])
+
 		if 'seasons' in details.keys():
-			name = name + ' [сериал]'			
-			infoLabels['set'] = str(details['seasons'])
-			if not details['seasonsFinal']:
-				infoLabels['set'] = infoLabels['set'] + '+'
+			params = {'id': id, 'handler': 'ListSeasons'}
+			name = name + ' [сериал]'		
+			torrents = searchDownloads(downloads, id=id)
+			if len(torrents) > 0:
+				ready = False
+				for torrent in torrents:
+					if torrent['torrent']['percentDone'] == 1:
+						ready=True
+						break
+				if ready:
+					name = util.color(name, 'green')
+				else:
+					name = util.color(name, 'orange')
+		else:
+			torrents = searchDownloads(downloads, id=id)
+			if len(torrents) == 0:
+				params = {'id': id, 'handler': 'AddTorrent'}				
+			else:
+				download = torrents[0]
+				contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'RemoveTorrent', 'hashString': download['torrent']['hashString']}) + ')'
+				contextMenuItems.append(('Remove Torrent',contextCmd))
+				if download['torrent']['percentDone'] == 1:
+					name = util.color(name, 'green')
+					params = {'hashString': download['torrent']['hashString'], 'handler': 'ListTorrentFiles'}		
+				else: 
+					name = util.color(name, 'orange')
+					params = {'hashString': download['torrent']['hashString'], 'handler': 'MonitorTorrent'}
+
+			
 		if 'myrating' in details.keys():
 			infoLabels['userrating'] = float(details['myrating'])
 			infoLabels['playcount'] = 1
-			if 'seasons' in details.keys():
-				contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Seasons', 'id': id}) + ')'
-				contextMenuItems.append(('Cезоны',contextCmd))
+		elif 'seasons' not in details.keys():
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'ContentWatched', 'id': id}) + ')'
+			contextMenuItems.append(('Watched',contextCmd))
 		item = xbmcgui.ListItem(name)	
 		item.setCast(details['actors'] + details['directors'])
 		item.setArt({'thumb': kinopoisk.getThumb(id), 'poster': kinopoisk.getPoster(id), 'fanart': kinopoisk.getPoster(id)})
@@ -113,39 +146,77 @@ def listContent(content, folder=-1):
 	cache.flush(c, _cacheFolder)
 
 	
-def handlerListTorrents():
-	downloads = getDownloads(None, _params['id'])
+def handlerListSeasons():
+	s = util.Session(_cookiesFolder)
+	c = cache.init(_cacheFolder)	
+	downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
+	details=cache.get(c, _params['id'])
+	if 'seasonsWatched' not in details.keys():
+		try:
+			xbmc.executebuiltin( "ActivateWindow(busydialog)" )
+			details['seasonsWatched'] = kinopoiskplus.getSeasons(s, _params['id'])['seasonsWatched']
+			cache.set(c, _params['id'], details)
+			cache.flush(c, _cacheFolder)
+			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+		except:
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			log(traceback.format_exc(),xbmc.LOGERROR)	
+			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+			xbmcgui.Dialog().ok('Error', 'Error detected while retrieving watched seasons', 'Check log for details')
+			return			
 	xbmcplugin.setContent(_handleId, 'movies')
-	for download in downloads:
+	for season in range (1, details['seasons'] + 1):
+		name = 'Сезон ' + str(season)
 		contextMenuItems = []
-		name = download['metadata']['torrentName']
-		if download['torrent']['percentDone'] == 1:
-			name = util.color(name, 'green')
-			params = {'id': _params['id'], 'hashString': download['torrent']['hashString'], 'handler': 'ListTorrentFiles'}
-		else: 
-			params = {'id': _params['id'], 'hashString': download['torrent']['hashString'], 'handler': 'MonitorTorrent'}
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FilterTorrentFiles', 'id': _params['id'], 'selected':'current', 'hashString': download['torrent']['hashString']}) + ')'
-			contextMenuItems.append(('Фильтр',contextCmd))			
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FilterTorrentFiles', 'id': _params['id'], 'selected':'unwatched','hashString': download['torrent']['hashString']}) + ')'
-			contextMenuItems.append(('Фильтр Просмотренных',contextCmd))
-		item = xbmcgui.ListItem(name)
-		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'RemoveTorrent', 'id': _params['id'], 'hashString': download['torrent']['hashString']}) + ')'
-		contextMenuItems.append(('Удалить',contextCmd))				
-		infoLabels = {'playCount':0}
-		item.setInfo( type="Video", infoLabels=infoLabels )											
-		item.addContextMenuItems(contextMenuItems, replaceItems=True)
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
-	item = xbmcgui.ListItem('Add Torrent')
-	params = {'id': _params['id'], 'handler': 'AddTorrent'}
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)	
-	xbmcplugin.endOfDirectory(_handleId)
-
+		if season <= details['seasonsWatched']:
+			infoLabels = {'playCount':1}
+		else:
+			infoLabels = {'playCount':0}
+		if season == details['seasonsWatched'] + 1:
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SeasonWatched', 'id': _params['id'], 'season': season}) + ')'
+			contextMenuItems.append(('Watched',contextCmd))
 		
-#def handlerOpenTorrentFolder():
-#	torrent = getDownloads(None,_params['id'],_params['hashString'])[0]['torrent']
-#	path = torrent['files'][0]['name']
-#	path = _transmissionDownloadsFolder + path.replace(util.fileName(path),'')	
-#	xbmc.executebuiltin('ActivateWindow(Videos,' + path + ')')
+		
+		torrents = searchDownloads(downloads, id=_params['id'], season=season)
+		if len(torrents) == 0:
+			params = {'id': _params['id'], 'season': season, 'handler': 'AddTorrent'}				
+		else:
+			download = torrents[0]
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'RemoveTorrent', 'hashString': download['torrent']['hashString']}) + ')'
+			contextMenuItems.append(('Remove Torrent',contextCmd))
+			if download['torrent']['percentDone'] == 1:
+				name = util.color(name, 'green')
+				params = {'hashString': download['torrent']['hashString'], 'handler': 'ListTorrentFiles'}		
+			else: 
+				name = util.color(name, 'orange')
+				params = {'hashString': download['torrent']['hashString'], 'handler': 'MonitorTorrent'}
+				contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FilterTorrentFiles', 'id': _params['id'], 'season': season, 'selected':'current', 'hashString': download['torrent']['hashString']}) + ')'
+				contextMenuItems.append(('Filter Manual',contextCmd))			
+				contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FilterTorrentFiles', 'id': _params['id'], 'season': season, 'selected':'unwatched','hashString': download['torrent']['hashString']}) + ')'
+				contextMenuItems.append(('Filter Watched',contextCmd))
+		
+		
+		
+		
+		item = xbmcgui.ListItem(name)			
+		item.setInfo( type="Video", infoLabels=infoLabels )											
+		item.addContextMenuItems(contextMenuItems, replaceItems=True)		
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
+	if not details['seasonsFinal']:
+		item = xbmcgui.ListItem('~Сезон ' + str(details['seasons'] + 1))			
+		infoLabels = {'playCount':0}
+		params = {'id': id, 'season': details['seasons'] + 1, 'handler': 'FutureSeason'}
+		item.setInfo( type="Video", infoLabels=infoLabels )													
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
+	xbmcplugin.endOfDirectory(_handleId)
+	
+
+def handlerFutureSeason():
+	xbmcgui.Dialog().ok('Error', 'Future season')
+
+	
+	
+
 	
 	
 def getTorrentVideoFilesList(torrent):
@@ -169,7 +240,7 @@ def getTorrentVideoFilesList(torrent):
 	
 
 def handlerListTorrentFiles():
-	torrent = getDownloads(None,_params['id'],_params['hashString'])[0]['torrent']
+	torrent = searchDownloads(hashString = _params['hashString'])[0]['torrent']
 	xbmcplugin.setContent(_handleId, 'files')
 	for item in getTorrentVideoFilesList(torrent):
 		d = eval(item.getProperty('code'))
@@ -179,7 +250,7 @@ def handlerListTorrentFiles():
 	
 
 def handlerFilterTorrentFiles():
-	torrent = getDownloads(None,_params['id'],_params['hashString'])[0]['torrent']
+	torrent = searchDownloads(hashString=_params['hashString'])[0]['torrent']
 	list = getTorrentVideoFilesList(torrent)
 	selected = []
 	for i in range (0, len(list)):
@@ -206,7 +277,7 @@ def handlerFilterTorrentFiles():
 		
 def handlerMonitorTorrent():
 	w = gui.DialogDownloadStatus("DialogDownloadStatus.xml",_path )	
-	w.setData({'function': getDownloads, 'id': _params['id'], 'hashString': _params['hashString']})
+	w.setData({'function': searchDownloads, 'hashString': _params['hashString']})
 	w.doModal()
 	w.stop()
 	del w
@@ -220,7 +291,10 @@ def handlerRemoveTorrent():
 
 	
 def handlerAddTorrent():	
-	downloads = getDownloads(None, _params['id'])
+	s = util.Session(_cookiesFolder)
+	downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
+	downloads = searchDownloads(downloads, id=_params['id'])
+
 	s = util.Session(_cookiesFolder)	
 	rutracker.loginVerify(s, _rutrackerUser, _rutrackerPassword)
 	c = cache.init(_cacheFolder)
@@ -232,16 +306,10 @@ def handlerAddTorrent():
 #	strict = [strictDirectors]
 	strict = []
 	
-	if 'seasons' in details.keys():
+	if 'season' in _params.keys():
 		if details['seasons'] > 1:
-			values = []
-			for i in range(1,details['seasons']+1):
-				values.append('Сезон ' + str(i))
-			result = xbmcgui.Dialog().select("Cезоны", values)			
-			if result==-1:
-				return
-			searchStr = searchStr + ' Сезон ' + str(result+1)
-			strictSeason = ['Сезон ' + str(result+1), 'Сезон: ' + str(result+1)]
+			searchStr = searchStr + ' Сезон ' + _params['season']
+			strictSeason = ['Сезон: ' + _params['season']]
 			strict.append(strictSeason)
 
 
@@ -273,80 +341,83 @@ def handlerAddTorrent():
 		return
 	torrent = torrents[result]	
 	data = {'id': _params['id'], 'torrentName': torrent['name']}
+	if 'season' in _params.keys():
+		data.update({'season': int(_params['season'])})
 	transmission.add(s, _transmissionUrl, torrent['url'], _transmissionDownloadsFolder, data)
 	xbmc.executebuiltin('Container.Refresh')
 	
 	
 def log(message,loglevel=xbmc.LOGNOTICE):
 	xbmc.log('plugin.video.kinopoisk' + " : " + message,level=loglevel)
-	
-
-
-def handlerRate():
-	s = util.Session(_cookiesFolder)
-	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
-	c = cache.init(_cacheFolder)
-	details=cache.get(c, _params['id'])
-	response = xbmcgui.Dialog().yesno(details['name'], ' ',' ', 'Моя Оценка: ' + str(util.nvld(details, 'myrating', ' ')), yeslabel='Изменить', nolabel='OK')
-	if response:
-		values = []
-		for i in range(2,10):
-			values.append(str(i+1))
-		result = xbmcgui.Dialog().select('Моя Оценка', values)
-		if result>=0:						
-			try:
-				xbmc.executebuiltin( "ActivateWindow(busydialog)" )				
-				kinopoisk.setWatched(s, _params['id'], True, values[result])	
-				details['myrating'] = int(values[result])
-				cache.set(c, _params['id'], details)
-				cache.flush(c, _cacheFolder)
-				xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-				xbmc.executebuiltin('Container.Refresh')
-			except:
-				exc_type, exc_value, exc_traceback = sys.exc_info()
-				log(traceback.format_exc(),xbmc.LOGERROR)	
-				xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-				xbmcgui.Dialog().ok('Error', 'Error detected while updating rate', 'Check log for details')
-			
-	
-def handlerSeasons():
-	s = util.Session(_cookiesFolder)
-	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
-	c = cache.init(_cacheFolder)
-	details=cache.get(c, _params['id'])
-	if 'seasonsWatched' in details.keys():
-		watched = details['seasonsWatched']
-	else:		
-		try:
-			xbmc.executebuiltin( "ActivateWindow(busydialog)" )
-			watched = kinopoiskplus.getSeasons(s, _params['id'])['seasonsWatched']
-			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-		except:
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			log(traceback.format_exc(),xbmc.LOGERROR)	
-			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-			xbmcgui.Dialog().ok('Error', 'Error detected while retrieving watched seasons', 'Check log for details')
-			return	
-	if watched == details['seasons']:
-		xbmcgui.Dialog().ok(details['name'], ' ',' ', 'Все сезоны просмотренны (' + str(details['seasons']) + ')')
-		return	
-	response = xbmcgui.Dialog().yesno(details['name'], ' ',' ', 'Мои просмотренные сезоны: ' + str(watched) + ' из ' + str(details['seasons']), yeslabel='Изменить', nolabel='OK')	
-	if response:
-		try:
-			xbmc.executebuiltin( "ActivateWindow(busydialog)" )
-			kinopoiskplus.setSeasonWatched(s,_params['id'],str(watched+1), True)
-			details['seasonsWatched'] = watched + 1
-			cache.set(c, _params['id'], details)
-			cache.flush(c, _cacheFolder)
-			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-			xbmc.executebuiltin('Container.Refresh')			
-		except:
-			exc_type, exc_value, exc_traceback = sys.exc_info()
-			log(traceback.format_exc(),xbmc.LOGERROR)	
-			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-			xbmcgui.Dialog().ok('Error', 'Error detected while updating watched seasons', 'Check log for details')
 		
 	
+def handlerContentWatched():
+	s = util.Session(_cookiesFolder)
+	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
+	c = cache.init(_cacheFolder)
+	details=cache.get(c, _params['id'])
+	values = []
+	for i in range(1,10):
+		values.append(str(i+1))
+	result = xbmcgui.Dialog().select('Оценка', values)
+	if not result>=0:
+			return					
+	try:
+		xbmc.executebuiltin( "ActivateWindow(busydialog)" )				
+		kinopoisk.setWatched(s, _params['id'], True, values[result])	
+		details['myrating'] = int(values[result])
+		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+	except:
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		log(traceback.format_exc(),xbmc.LOGERROR)	
+		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+		xbmcgui.Dialog().ok('Error', 'Error detected while updating rate', 'Check log for details')
+		return
+	cache.set(c, _params['id'], details)
+	cache.flush(c, _cacheFolder)
+	xbmc.executebuiltin('Container.Refresh')			
+
+	
+def handlerSeasonWatched():
+	s = util.Session(_cookiesFolder)
+	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
+	c = cache.init(_cacheFolder)
+	details=cache.get(c, _params['id'])
+	if 'myrating' not in details.keys():
+		values = []
+		for i in range(1,10):
+			values.append(str(i+1))
+		result = xbmcgui.Dialog().select('Оценка', values)
+		if not result>=0:
+			return
+		try:
+			xbmc.executebuiltin( "ActivateWindow(busydialog)" )				
+			kinopoisk.setWatched(s, _params['id'], True, values[result])	
+			details['myrating'] = int(values[result])			
+			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+		except:
+			exc_type, exc_value, exc_traceback = sys.exc_info()
+			log(traceback.format_exc(),xbmc.LOGERROR)	
+			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+			xbmcgui.Dialog().ok('Error', 'Error detected while updating rate', 'Check log for details')
+			return
+	try:
+		xbmc.executebuiltin( "ActivateWindow(busydialog)" )
+		kinopoiskplus.setSeasonWatched(s,_params['id'],_params['season'], True)
+		details['seasonsWatched'] = int(_params['season'])		
+		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+	except:
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		log(traceback.format_exc(),xbmc.LOGERROR)	
+		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+		xbmcgui.Dialog().ok('Error', 'Error detected while updating watched seasons', 'Check log for details')	
+		return
+	cache.set(c, _params['id'], details)
+	cache.flush(c, _cacheFolder)
+	xbmc.executebuiltin('Container.Refresh')		
+	
+	
+
 
 def handlerFolderAdd():	
 	s = util.Session(_cookiesFolder)
@@ -457,7 +528,7 @@ def handlerDownloads():
 
 	
 def handlerRoot():	
-		
+	
 #	c = cache.init(_cacheFolder)
 #	cache.purge(c, _cacheAge)
 #	cache.flush(c, _cacheFolder)
@@ -492,4 +563,8 @@ if 'handler' in _params.keys():
 	globals()['handler' + _params['handler']]()
 else:
 	handlerRoot()
+	
+
+#	download['torrent']['percentDone'] == 1:
+	
 	

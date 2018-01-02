@@ -77,7 +77,7 @@ class DialogDownloadStatus (xbmcgui.WindowXMLDialog):
 
 	def updater(self):		
 		while self.updaterFlag:	
-			torrent = self.data['function'](None, self.data['id'], self.data['hashString'])[0]['torrent']
+			torrent = self.data['function'](hashString=self.data['hashString'])[0]['torrent']
 			if torrent['percentDone'] == 1:
 				break			
 			eta = 'Unknown'
