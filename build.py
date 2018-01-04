@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.kinopoiskplus'
-version = '1.3'
+addon = 'plugin.program.epgscrapper'
+version = '1.1'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
