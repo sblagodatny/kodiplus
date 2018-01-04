@@ -2,9 +2,10 @@
 
 import util
 import datetime
+import time
 from bs4 import BeautifulSoup
 
-
+tzOffsetIsrael = 2 * 3600
 
 def getChannelData(id, days):
 	today = datetime.date.today()
@@ -22,20 +23,28 @@ def getChannelData(id, days):
 		content = BeautifulSoup(s.get(url=url, params=params).text, "html.parser")
 		for tag in content.find_all(class_="text"):	
 			pdata = tag.get_text().split(' - ')
-			data.append({'time': datetime.datetime(theday.year, theday.month, theday.day, int(pdata[0].split(':')[0]), int(pdata[0].split(':')[1])), 'name': pdata[1]})
+			data.append({
+				'time': datetime.datetime(
+					year = theday.year, 
+					month = theday.month, 
+					day = theday.day, 
+					hour = int(pdata[0].split(':')[0]), 
+					minute = int(pdata[0].split(':')[1]),
+					tzinfo = util.timezone(tzOffsetIsrael)
+				), 
+				'name': pdata[1]
+			})
 	return data
 
 	
-def getEPG(days, playlist):
+def getEPG(days):
 	result = {}
 	channels = {
 		'CH34': 'קשת',
 		'CH36': 'רשת',
 		'TV04': 'ערוץ 10',
-		'TV67': 'ערוץ 24',
 		'TV50': 'ערוץ 9'
 	}
 	for channel in channels.keys():
-		if channels[channel] in playlist:
-			result[channels[channel]] = getChannelData(channel,days)
+		result[channels[channel]] = getChannelData(channel,days)
 	return result
