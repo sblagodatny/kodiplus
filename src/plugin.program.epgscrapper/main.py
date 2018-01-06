@@ -5,19 +5,10 @@ import urlparse
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcvfs
-import urllib
 import xbmcaddon
-import util
-import os
+import xbmcvfs
+#import util
 import datetime
-import epgIsrael
-from bs4 import BeautifulSoup
-import io
-import datetime
-import time
-import codecs
-import requests
 
 
 
@@ -36,31 +27,47 @@ if len(_playlistFile) == 0:
 _epgDays = int(_addon.getSetting('epgDays'))+1
 	
 	
-_xmltvUrls = ['http://api.torrent-tv.ru/ttv.xmltv.xml.gz']
-	
-	
 
 	
 def handlerRoot():
 	reload(sys)
-	sys.setdefaultencoding("utf-8")
-	names = util.m3uParse(_playlistFile)
-	epgs = []
+	sys.setdefaultencoding("utf-8")	
 	
-	epg = epgIsrael.getEPG(_epgDays)
-	epg = util.filterByName(epg, names)
-	epgs.append(epg)
+	channels = []
+	f = xbmcvfs.File (_playlistFile, 'r')
+	for line in f.read().splitlines():
+		if line.startswith('#EXTINF'):
+			try:
+				channels.append({
+					'id': line.split('tvg-id="')[1].split('"')[0],
+					'name': line.split(',')[1]
+				})
+			except:
+				None
+	f.close()
 	
-	tmp = _path + '/tmp'
-	for url in _xmltvUrls:
-		util.wgetZip(url, tmp)
-		epg = util.xmltvParse(tmp)
-		epg = util.filterByName(epg, names)
-		epg = util.filterByDays(epg, _epgDays)
-		epgs.append(epg)
-	os.remove(tmp)
+	pid = 1
+	f = xbmcvfs.File (_epgFile, 'w')
+	f.write('<?xml version="1.0" encoding="utf-8"?>' + "\n")
+	f.write('<!DOCTYPE tv SYSTEM "http://xmltv.cvs.sourceforge.net/viewvc/xmltv/xmltv/xmltv.dtd">' + "\n")
+	f.write('<tv>' + "\n")
+	for channel in channels:
+			xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(_addon.getAddonInfo('name'),channel['name'], 1, _addon.getAddonInfo('icon')))
+			f.write('<channel id="' + channel['id'] + '" ><display-name>' + channel['name'].encode('utf-8') + '</display-name></channel>' + "\n")
+			scrapper = getattr(__import__('scrappers'), 'getEpg' + channel['id'].split('_')[0])			
+			programs = scrapper(channel['id'].split('_')[1], _epgDays)
+			for program in programs:
+				start = datetime.datetime.strftime(program['start'],'%Y%m%d%H%M%S %z')
+				stop = datetime.datetime.strftime(program['stop'],'%Y%m%d%H%M%S %z')
+				f.write('<programme id="' + str(pid) + '" start="' + start + '" stop="' + stop + '" channel="' + channel['id'] + '" >' + "\n")
+				f.write('<title>' + program['title'].encode('utf-8') + '</title>' + "\n")
+				f.write('<desc>' + program['description'].encode('utf-8') + '</desc>' + "\n")
+				f.write('</programme>' + "\n")
+				pid = pid + 1			
+	f.write('</tv>' + "\n")
+	f.close()
 	
-	util.xmltvWriteMultiple(epgs, _epgFile)	
+	
 
 	
 	
@@ -69,4 +76,3 @@ if 'handler' in _params.keys():
 	globals()['handler' + _params['handler']]()
 else:
 	handlerRoot()
-	
