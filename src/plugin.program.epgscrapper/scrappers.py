@@ -61,6 +61,10 @@ def getEpgYandex(id, days):
 				'title': pdata['program']['title'],
 				'description': ''
 			}
+			if 'episode' in pdata:
+				if 'title' in pdata['episode']:
+					if pdata['episode']['title'] != program['title']:
+						program['title'] = program['title'] + ', ' + pdata['episode']['title']
 			if 'description' in pdata['program']:
 				program['description'] = pdata['program']['description'].replace ("\n","")
 			programs.append(program)

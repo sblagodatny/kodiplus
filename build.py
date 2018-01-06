@@ -4,7 +4,7 @@ import hashlib
 
 
 addon = 'plugin.program.epgscrapper'
-version = '1.2'
+version = '1.3'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
