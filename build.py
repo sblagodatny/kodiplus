@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.kinopoiskplus'
-version = '1.4'
+addon = 'plugin.video.youtubeplus'
+version = '1.2'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

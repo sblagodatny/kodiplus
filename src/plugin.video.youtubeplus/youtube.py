@@ -219,8 +219,7 @@ def getStreams(id, session):
 	streams = {}
 	player = getPlayer(session, id)
 	cipher = getCipher(session, player)
-	info = getVideoInfo(session, id, player)
-	data = info.get('url_encoded_fmt_stream_map', '')
+	data = player.get("args", {}).get("url_encoded_fmt_stream_map","")
 	if len(data) > 5:
 		data = data.split(',')
 		for i in range(len(data)):
@@ -228,14 +227,18 @@ def getStreams(id, session):
 			url = urllib.unquote(stream['url'])
 			if '&signature=' not in url and 's' in stream.keys():
 				url = url + '&signature=' + cipher([stream['s']])
-			streams.update({stream['itag']: url})		
-	else:	
-		data = session.get(urllib.unquote(info['hlsvp'])).text.splitlines()
-		for i in range (len(data)):
-			if data[i].startswith('http'):
-				itag, dummy = util.substr("itag/","/",data[i])
-				streams.update({itag: data[i]})		
+			streams.update({stream['itag']: url})
 	return streams
+		
+#	data = player.get("args", {}).get("hlsvp","")
+#	if len(data) > 5:	
+#		data = session.get(urllib.unquote(data)).text.splitlines()
+#		for i in range (len(data)):
+#			if data[i].startswith('http'):
+#				itag, dummy = util.substr("itag/","/",data[i])
+#				streams.update({itag: data[i]})		
+#		return streams
+#	return streams
 	
 	
 def getDash(id, session):	
