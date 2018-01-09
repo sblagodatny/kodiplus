@@ -39,6 +39,7 @@ _rutrackerPassword = util.nvls(_addon.getSetting('rutrackerPassword'),'')
 _transmissionUrl = util.nvls(_addon.getSetting('transmissionUrl'),'http://localhost/transmission/rpc')
 _transmissionDownloadsFolder = util.nvls(_addon.getSetting('transmissionDownloadsFolder'),_path)
 _cacheFolder = util.nvls(_addon.getSetting('cacheFolder'),_path)
+_cacheFile = _cacheFolder + '/cache.db' 
 _cacheAge = int(_addon.getSetting('cacheAge'))
 
 reload(sys)  
@@ -70,7 +71,6 @@ def searchDownloads(downloads=None, id=None, season=None, hashString = None):
 	
 def listContent(content, folder=-1):
 	s = util.Session(_cookiesFolder)
-	c = cache.init(_cacheFolder)	
 	downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
 	xbmcplugin.setContent(_handleId, 'movies')
 	for id in content:
@@ -86,10 +86,10 @@ def listContent(content, folder=-1):
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FolderMove', 'id': id, 'folder': folder}) + ')'
 			contextMenuItems.append(('Move to Folder',contextCmd))	
 		infoLabels = {'playCount':0}	
-		details=cache.get(c, id)
+		details=cache.get(id, _cacheFile)
 		if details is None:
 			details = kinopoisk.getDetails(s, id)
-			cache.set(c, id, details)			
+			cache.set(id, details, _cacheFile)			
 		name = details['name']
 		if 'nameOrig' in details.keys():
 			name = name + ' / ' + details['nameOrig']
@@ -143,20 +143,17 @@ def listContent(content, folder=-1):
 		item.addContextMenuItems(contextMenuItems, replaceItems=True)		
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
-	cache.flush(c, _cacheFolder)
 
 	
 def handlerListSeasons():
 	s = util.Session(_cookiesFolder)
-	c = cache.init(_cacheFolder)	
 	downloads = transmission.get(s, _transmissionUrl, _transmissionDownloadsFolder)
-	details=cache.get(c, _params['id'])
+	details=cache.get(_params['id'], _cacheFile)
 	if 'seasonsWatched' not in details.keys():
 		try:
 			xbmc.executebuiltin( "ActivateWindow(busydialog)" )
 			details['seasonsWatched'] = kinopoiskplus.getSeasons(s, _params['id'])['seasonsWatched']
-			cache.set(c, _params['id'], details)
-			cache.flush(c, _cacheFolder)
+			cache.set(_params['id'], details, _cacheFile)
 			xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 		except:
 			exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -297,8 +294,8 @@ def handlerAddTorrent():
 
 	s = util.Session(_cookiesFolder)	
 	rutracker.loginVerify(s, _rutrackerUser, _rutrackerPassword)
-	c = cache.init(_cacheFolder)
-	details=cache.get(c, _params['id'])
+	
+	details=cache.get(_params['id'], _cacheFile)
 	searchStr = details['name']
 #	strictDirectors = []
 #	for director in details['directors']:
@@ -354,8 +351,7 @@ def log(message,loglevel=xbmc.LOGNOTICE):
 def handlerContentWatched():
 	s = util.Session(_cookiesFolder)
 	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
-	c = cache.init(_cacheFolder)
-	details=cache.get(c, _params['id'])
+	details=cache.get(_params['id'], _cacheFile)
 	values = []
 	for i in range(1,10):
 		values.append(str(i+1))
@@ -365,24 +361,22 @@ def handlerContentWatched():
 	try:
 		xbmc.executebuiltin( "ActivateWindow(busydialog)" )				
 		kinopoisk.setWatched(s, _params['id'], True, values[result])	
-		details['myrating'] = int(values[result])
+		details['myrating'] = int(values[result])		
 		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+		cache.set(_params['id'], details, _cacheFile)
 	except:
 		exc_type, exc_value, exc_traceback = sys.exc_info()
 		log(traceback.format_exc(),xbmc.LOGERROR)	
 		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 		xbmcgui.Dialog().ok('Error', 'Error detected while updating rate', 'Check log for details')
-		return
-	cache.set(c, _params['id'], details)
-	cache.flush(c, _cacheFolder)
+		return	
 	xbmc.executebuiltin('Container.Refresh')			
 
 	
 def handlerSeasonWatched():
 	s = util.Session(_cookiesFolder)
 	kinopoiskplus.loginVerify(s, _kinopoiskUser, _kinopoiskPassword)
-	c = cache.init(_cacheFolder)
-	details=cache.get(c, _params['id'])
+	details=cache.get(_params['id'], _cacheFile)
 	if 'myrating' not in details.keys():
 		values = []
 		for i in range(1,10):
@@ -412,8 +406,7 @@ def handlerSeasonWatched():
 		xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 		xbmcgui.Dialog().ok('Error', 'Error detected while updating watched seasons', 'Check log for details')	
 		return
-	cache.set(c, _params['id'], details)
-	cache.flush(c, _cacheFolder)
+	cache.set(_params['id'], details, _cacheFile)
 	xbmc.executebuiltin('Container.Refresh')		
 	
 	
@@ -563,8 +556,6 @@ if 'handler' in _params.keys():
 	globals()['handler' + _params['handler']]()
 else:
 	handlerRoot()
-	
 
-#	download['torrent']['percentDone'] == 1:
 	
 	

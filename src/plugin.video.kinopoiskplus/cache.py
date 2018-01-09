@@ -1,31 +1,25 @@
-import datetime
-import util
+import cPickle as pickle
+from sqlite3 import dbapi2 as sqlite
 
-def init(path):
-	c = util.fileToObj(path + '/cache')
-	if c is None:
-		return {}
-	return c
-	
-def flush(c, path):
-	util.objToFile(c, path + '/cache')
-	
-def get(c, id):
-	if id in c.keys():
-		c[id]['ts'] = datetime.datetime.today()
-		return c[id]['obj']
-	return None
+def get(id, file):
+	db = sqlite.connect(file)
+	result = db.execute("SELECT object FROM cache WHERE id=?",(id,)).fetchone()
+	if result is None:
+		db.close()
+		return None
+	db.execute("UPDATE cache SET accessed = datetime('now', 'localtime') WHERE id = ?",(id,))						
+	db.commit()
+	db.close()
+	return (pickle.loads(str(result[0])))
+		
 
-def set(c, id, obj):
-	c[id] = {'obj': obj, 'ts': datetime.datetime.today()}
-
-def remove(c, id):
-	del c[id]
-
-def purge(c, age):
-	now = datetime.datetime.today()
-	for id in c.keys():
-		cage = now - c[id]['ts']
-		if cage.days > age:
-			del c[id]
-
+def set(id, obj, file):
+	db = sqlite.connect(file)
+	result = db.execute("SELECT rowid FROM cache WHERE id = ?",(id,)).fetchone()
+	bobj = sqlite.Binary(pickle.dumps(obj))
+	if result is None:
+		db.execute("INSERT INTO cache (id, object, created, modified, accessed) VALUES (?,?,datetime('now', 'localtime'),datetime('now', 'localtime'),datetime('now', 'localtime'))",(id, bobj))
+	else:
+		db.execute("UPDATE cache SET accessed = datetime('now', 'localtime'), modified = datetime('now', 'localtime'), object = ? WHERE id = ?",(id, bobj))
+	db.commit()
+	db.close()
