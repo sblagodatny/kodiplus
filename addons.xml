@@ -74,4 +74,20 @@
     </extension>
 </addon>
 
+
+<addon id="plugin.video.tvarchive" version="1.0" name="TV Archive" provider-name="Stas Blagodatny">
+	<requires>
+		<import addon="xbmc.python" version="2.7.10"/>
+		<import addon="script.module.requests"/>
+		<import addon="script.module.beautifulsoup4"/>
+	</requires>
+	<extension point="xbmc.python.pluginsource" library="main.py">
+		<provides>video</provides>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<summary lang="en">TV Archive</summary>
+		<description lang="en">TV Archive</description>
+	</extension>
+</addon>
+
 </addons>
