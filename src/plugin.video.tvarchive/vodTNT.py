@@ -93,9 +93,9 @@ def getStream(urlEpisode):
 		'referer': urlRuTube
 	}
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-#	return data['video_balancer']['m3u8']
-	m3u = s.get(data['video_balancer']['m3u8'], headers=headers).text
-	m3u = m3u.replace('http',"\n" + 'http')
-	stream = m3u.splitlines()[-1]
-	return stream
+	return data['video_balancer']['m3u8']
+#	m3u = s.get(data['video_balancer']['m3u8'], headers=headers).text
+#	m3u = m3u.replace('http',"\n" + 'http')
+#	stream = m3u.splitlines()[-1]
+#	return stream
 	
