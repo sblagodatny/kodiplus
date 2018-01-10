@@ -77,7 +77,7 @@ def handlerRoot():
 	
 	### Build base list ###
 	pathImg = _path + '/resources/img/'
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'ListPrograms'}), isFolder=True, listitem=xbmcgui.ListItem('ТНТ', iconImage=pathImg+'ТНТ.png'))
+	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'ListPrograms'}), isFolder=True, listitem=xbmcgui.ListItem('ТНТ', iconImage=pathImg+'TNT.png'))
 	xbmcplugin.endOfDirectory(_handleId)
 
 	

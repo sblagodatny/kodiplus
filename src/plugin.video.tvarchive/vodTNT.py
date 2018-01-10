@@ -4,9 +4,12 @@ import json
 
 def getPrograms():
 	result = []	
+	headers = {
+		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
+	}
 	url = 'http://tnt-online.ru/programs.htm'
 	s = requests.Session()
-	soup = BeautifulSoup(s.get(url).text, "html.parser")
+	soup = BeautifulSoup(s.get(url, headers=headers).text, "html.parser")
 	data = soup.find('div',{'id' : 'all-videos'})
 	for tag in data.find_all('div',recursive=False):
 		result.append({			
@@ -63,7 +66,7 @@ def getEpisodes1(urlProgram):
 		result.append({			
 			'name': ep['name'],
 			'url': ep['url'],
-			'thumb': ep['icon_big'],
+			'thumb': ep['icon'],
 			'season': ep['season'],
 			'episode': ep['episode']
 		})
@@ -90,5 +93,9 @@ def getStream(urlEpisode):
 		'referer': urlRuTube
 	}
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-	return data['video_balancer']['m3u8']
+#	return data['video_balancer']['m3u8']
+	m3u = s.get(data['video_balancer']['m3u8'], headers=headers).text
+	m3u = m3u.replace('http',"\n" + 'http')
+	stream = m3u.splitlines()[-1]
+	return stream
 	
