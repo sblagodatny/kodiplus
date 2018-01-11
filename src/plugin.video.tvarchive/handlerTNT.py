@@ -73,7 +73,7 @@ def getEpisodes1(urlProgram):
 	return (result)
 	
 	
-def getStream(urlEpisode):
+def getStreams(urlEpisode):
 	s = requests.Session()
 	headers = {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',	
@@ -93,12 +93,11 @@ def getStream(urlEpisode):
 		'referer': urlRuTube
 	}
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-#	return data['video_balancer']['m3u8']
 	streams = []
 	m3u = s.get(data['video_balancer']['m3u8'], headers=headers).text
 	m3u = m3u.replace('http',"\n" + 'http').splitlines()
 	for line in m3u:
 		if line.startswith('http'):
 			streams.append(line)
-	return streams[-2]
+	return streams
 	
