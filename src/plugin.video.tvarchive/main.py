@@ -24,12 +24,14 @@ sys.setdefaultencoding('utf8')
 
 	
 def handlerListPrograms():
-#	xbmcplugin.setContent(_handleId, 'movies')
+	xbmcplugin.setContent(_handleId, 'movies')
 	handler = getattr(__import__(_params['arhiveHandler']), 'getPrograms' )	
-	programs = handler()
+	programs = handler(liveOnly=True)
 	for program in programs:			
 		item = xbmcgui.ListItem(program['name'], iconImage=program["thumb"] )
 		item.setProperty("IsPlayable","false")	
+		infoLabels = {'plot': program['description']}	
+		item.setInfo( type="Video", infoLabels=infoLabels )		
 		params = {
 			'handler': 'ListEpisodes',
 			'arhiveHandler': _params['arhiveHandler'],
@@ -40,32 +42,38 @@ def handlerListPrograms():
 	
 	
 def handlerListEpisodes():
-#	xbmcplugin.setContent(_handleId, 'movies')
+	xbmcplugin.setContent(_handleId, 'movies')
 	handler = getattr(__import__(_params['arhiveHandler']), 'getEpisodes' )	
 	episodes = handler(_params['urlProgram'])
 	for episode in episodes:			
 		item = xbmcgui.ListItem(episode['name'], iconImage=episode["thumb"] )
-		item.setProperty("IsPlayable","true")	
+		item.setProperty("IsPlayable","true")
+		infoLabels = {'plot': episode['description']}
+		if 'duration' in episode.keys():
+			infoLabels['duration'] = float(episode['duration'])
+		item.setInfo( type="Video", infoLabels=infoLabels )		
+		params = {
+			'handler': 'PlayEpisode',
+			'arhiveHandler': _params['arhiveHandler'],
+		}
 		if 'streams' in episode.keys():
-			url = episode['streams'][-1]
+			params['streams'] = str(episode['streams'])
 		else:
-			params = {
-				'handler': 'PlayEpisode',
-				'arhiveHandler': _params['arhiveHandler'],
-				'urlEpisode': episode['url']
-			}
-			url = _baseUrl+'?' + urllib.urlencode(params)
-								
+			params['urlEpisode'] = episode['url']
+		url = _baseUrl+'?' + urllib.urlencode(params)						
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=False, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
 	
 	
 def handlerPlayEpisode():	
-	handler = getattr(__import__(_params['arhiveHandler']), 'getStreams' )	
-	streams = handler(_params['urlEpisode'])
+	if 'streams' in _params:
+		streams = eval(_params['streams'])
+	else:
+		handler = getattr(__import__(_params['arhiveHandler']), 'getStreams' )	
+		streams = handler(_params['urlEpisode'])
 #	xbmcgui.Dialog().ok('Notice', url)
 	item=xbmcgui.ListItem()
-	item.setPath(streams[-1])
+	item.setPath(streams[1])
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		
 	return		
 

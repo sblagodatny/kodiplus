@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
-def getPrograms():
+def getPrograms(liveOnly=False):
 	result = []	
 	headers = {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
@@ -15,7 +15,8 @@ def getPrograms():
 		result.append({			
 			'name': tag.find('b').find('a').get_text(),
 			'url': tag.find('b').find('a')['href'],
-			'thumb': tag.find('img')['src']						
+			'thumb': tag.find('img')['src'],
+			'description': ''
 		})
 	return (result)	
 
@@ -35,16 +36,16 @@ def getEpisodes2(urlProgram):
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',		
 		'Referer': urlProgram
 	}
-	
 	for page in range(1,60):
 		params = {'spage': str(page)}
 		url = urlProgram + 's01e01'
 		soup = BeautifulSoup(s.get(url, headers=headers, params = params).text, "html.parser")
 		for tag in soup.find_all('div', class_="thumb-video"):									
-			result.append({			
-				'name': tag.find('a')['title'],
+			result.append({
+				'name': tag.find('div', class_='link').find('a').get_text(),
 				'url': urlProgram + tag.find('a')['href'].replace('/',''),
-				'thumb': tag.find('img')['src']
+				'thumb': tag.find('img')['src'],
+				'description': tag.find('a')['title']
 			})
 		next = soup.find('input', {'href': '?spage=' + str(page+1)})
 		if next is None:
@@ -64,11 +65,10 @@ def getEpisodes1(urlProgram):
 	data = json.loads(s.get(url, params=params).text)
 	for ep in data['data']:
 		result.append({			
-			'name': ep['name'],
+			'name': ep['title_format'],
 			'url': ep['url'],
-			'thumb': ep['icon'],
-			'season': ep['season'],
-			'episode': ep['episode']
+			'thumb': ep['icon_big'],
+			'description': ''
 		})
 	return (result)
 	
@@ -99,5 +99,6 @@ def getStreams(urlEpisode):
 	for line in m3u:
 		if line.startswith('http'):
 			streams.append(line)
+	streams.reverse()
 	return streams
 	
