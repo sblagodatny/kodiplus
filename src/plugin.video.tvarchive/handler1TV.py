@@ -43,7 +43,7 @@ def getPrograms(liveOnly=False):
 
 
 
-def getEpisodes(urlProgram):
+def getEpisodes(urlProgram, forceLowQuality=False):
 	result = []	
 	s = requests.Session()
 	s.verify = False
@@ -60,18 +60,18 @@ def getEpisodes(urlProgram):
 		'sort': 'none'
 	}
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-	for episode in data:
-		streams = []
-		for stream in episode['mbr']:
-			streams.append('http:' + stream['src'])
+	for episode in data:		
 		name = episode['title']
 		description = ''
 		if '.' in name:
 			description = name
 			name = description.split('.')[0]
+		stream = 'http:' + episode['mbr'][0]['src']
+		if forceLowQuality:
+			stream = 'http:' + episode['mbr'][1]['src']
 		result.append({			
 			'name': name,
-			'streams': streams,
+			'stream': stream,
 			'thumb': 'http:' + episode['poster_thumb'],
 			'description': description,
 			'duration': int(episode['duration'])

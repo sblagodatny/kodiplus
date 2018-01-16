@@ -18,7 +18,13 @@ _params = dict(urlparse.parse_qsl(sys.argv[2][1:]))
 _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('path')
 	
+_forceLowQuality=_addon.getSetting('forceLowQuality')
+if _forceLowQuality=='true':
+	_forceLowQuality = True
+else:
+	_forceLowQuality = False
 
+	
 reload(sys)  
 sys.setdefaultencoding('utf8')	
 
@@ -44,7 +50,7 @@ def handlerListPrograms():
 def handlerListEpisodes():
 	xbmcplugin.setContent(_handleId, 'movies')
 	handler = getattr(__import__(_params['arhiveHandler']), 'getEpisodes' )	
-	episodes = handler(_params['urlProgram'])
+	episodes = handler(_params['urlProgram'], _forceLowQuality)
 	for episode in episodes:			
 		item = xbmcgui.ListItem(episode['name'], iconImage=episode["thumb"] )
 		item.setProperty("IsPlayable","true")
@@ -56,8 +62,8 @@ def handlerListEpisodes():
 			'handler': 'PlayEpisode',
 			'arhiveHandler': _params['arhiveHandler'],
 		}
-		if 'streams' in episode.keys():
-			params['streams'] = str(episode['streams'])
+		if 'stream' in episode.keys():
+			params['stream'] = episode['stream']
 		else:
 			params['urlEpisode'] = episode['url']
 		url = _baseUrl+'?' + urllib.urlencode(params)						
@@ -66,14 +72,13 @@ def handlerListEpisodes():
 	
 	
 def handlerPlayEpisode():	
-	if 'streams' in _params:
-		streams = eval(_params['streams'])
+	if 'stream' in _params:
+		stream = _params['stream']
 	else:
 		handler = getattr(__import__(_params['arhiveHandler']), 'getStreams' )	
-		streams = handler(_params['urlEpisode'])
-#	xbmcgui.Dialog().ok('Notice', url)
+		stream = handler(_params['urlEpisode'], _forceLowQuality)
 	item=xbmcgui.ListItem()
-	item.setPath(streams[1])
+	item.setPath(stream)
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		
 	return		
 
