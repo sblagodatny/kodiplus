@@ -95,18 +95,13 @@ def getStreams(urlEpisode, forceLowQuality=False):
 		'referer': urlRuTube
 	}
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-	url = data['video_balancer']['m3u8']
-	m3u = s.get(url, params=params, headers=headers).text
-	m3u = m3u.replace('http',"\n" + 'http').splitlines()
-	streams = {}
-	for line in m3u:
-		if line.startswith('http'):
-			quality = line.split('i=')[1].split('_')[0]
-			streams.update({quality: line})
-	qualitiesAccepted = ['896x504','640x360']
-	if forceLowQuality:
-		qualitiesAccepted = ['640x360']
-	for quality in qualitiesAccepted:
-		if quality in streams.keys():
-			return streams[quality]
-	return
+	data = json.loads(s.get(data['video_balancer']['json'], headers=headers).text)
+	return (data['results'][0])
+	
+#	qualitiesAccepted = ['896x504','640x360','512x288']
+#	if forceLowQuality:
+#		qualitiesAccepted = ['512x288','640x360']	
+#	for quality in qualitiesAccepted:
+#		if quality in streams.keys():
+#			return streams[quality]
+#	return
