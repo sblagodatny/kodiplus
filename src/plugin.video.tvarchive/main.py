@@ -18,11 +18,11 @@ _params = dict(urlparse.parse_qsl(sys.argv[2][1:]))
 _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('path')
 	
-_forceLowQuality=_addon.getSetting('forceLowQuality')
-if _forceLowQuality=='true':
-	_forceLowQuality = True
-else:
-	_forceLowQuality = False
+#_forceLowQuality=_addon.getSetting('forceLowQuality')
+#if _forceLowQuality=='true':
+#	_forceLowQuality = True
+#else:
+#	_forceLowQuality = False
 
 	
 reload(sys)  
@@ -50,7 +50,7 @@ def handlerListPrograms():
 def handlerListEpisodes():
 	xbmcplugin.setContent(_handleId, 'movies')
 	handler = getattr(__import__(_params['arhiveHandler']), 'getEpisodes' )	
-	episodes = handler(_params['urlProgram'], _forceLowQuality)
+	episodes = handler(_params['urlProgram'])
 	for episode in episodes:			
 		item = xbmcgui.ListItem(episode['name'], iconImage=episode["thumb"] )
 		item.setProperty("IsPlayable","true")
@@ -76,7 +76,7 @@ def handlerPlayEpisode():
 		stream = _params['stream']
 	else:
 		handler = getattr(__import__(_params['arhiveHandler']), 'getStreams' )	
-		stream = handler(_params['urlEpisode'], _forceLowQuality)
+		stream = handler(_params['urlEpisode'])
 	item=xbmcgui.ListItem()
 	item.setPath(stream)
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		

@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import urlparse
+import urllib
 
 def getPrograms(liveOnly=False):
 	result = []	
@@ -22,7 +23,7 @@ def getPrograms(liveOnly=False):
 	return (result)	
 
 
-def getEpisodes(urlProgram, forceLowQuality=False):
+def getEpisodes(urlProgram):
 	try:
 		episodes = getEpisodes1(urlProgram)
 	except:
@@ -75,7 +76,7 @@ def getEpisodes1(urlProgram):
 	
 	
 	
-def getStreams(urlEpisode, forceLowQuality=False):
+def getStreams(urlEpisode):
 	s = requests.Session()
 	headers = {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',	
@@ -94,14 +95,21 @@ def getStreams(urlEpisode, forceLowQuality=False):
 		'no_404': 'true',
 		'referer': urlRuTube
 	}
+	url = url + '?' + urllib.urlencode(params)
+	params = {
+		'urlText': url
+	}
+	url = 'http://ru4.gsr.awhoer.net/home287/cmd'	
 	data = json.loads(s.get(url, params=params, headers=headers).text)
-	data = json.loads(s.get(data['video_balancer']['json'], headers=headers).text)
-	return (data['results'][0])
-	
-#	qualitiesAccepted = ['896x504','640x360','512x288']
-#	if forceLowQuality:
-#		qualitiesAccepted = ['512x288','640x360']	
-#	for quality in qualitiesAccepted:
-#		if quality in streams.keys():
-#			return streams[quality]
-#	return
+	url = data['video_balancer']['m3u8']
+	url = 'http://bl.rutube.ru/route/' + url.split('/route/')[1]
+	data = s.get(url).text.splitlines()
+	streams = {}
+	for line in data:
+		if line.startswith('http'):
+			quality = line.split('?i=')[1].split('_')[0]
+			streams.update({quality: line})
+	if '640x360' in streams.keys():
+		return streams['640x360']
+	else:
+		return streams [streams.keys()[0]]

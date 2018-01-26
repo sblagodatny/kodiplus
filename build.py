@@ -4,7 +4,7 @@ import hashlib
 
 
 addon = 'plugin.video.tvarchive'
-version = '1.7'
+version = '1.8'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

@@ -43,7 +43,7 @@ def getPrograms(liveOnly=False):
 
 
 
-def getEpisodes(urlProgram, forceLowQuality=False):
+def getEpisodes(urlProgram):
 	result = []	
 	s = requests.Session()
 	s.verify = False
@@ -66,9 +66,7 @@ def getEpisodes(urlProgram, forceLowQuality=False):
 		if '.' in name:
 			description = name
 			name = description.split('.')[0]
-		stream = 'http:' + episode['mbr'][0]['src']
-		if forceLowQuality:
-			stream = 'http:' + episode['mbr'][1]['src']
+		stream = 'http:' + episode['mbr'][1]['src']
 		result.append({			
 			'name': name,
 			'stream': stream,
