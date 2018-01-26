@@ -75,7 +75,7 @@
 </addon>
 
 
-<addon id="plugin.video.tvarchive" version="1.8" name="TV Archive" provider-name="Stas Blagodatny">
+<addon id="plugin.video.tvarchive" version="1.9" name="TV Archive" provider-name="Stas Blagodatny">
 	<requires>
 		<import addon="xbmc.python" version="2.7.10"/>
 		<import addon="script.module.requests"/>

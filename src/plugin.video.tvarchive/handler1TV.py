@@ -66,7 +66,7 @@ def getEpisodes(urlProgram):
 		if '.' in name:
 			description = name
 			name = description.split('.')[0]
-		stream = 'http:' + episode['mbr'][1]['src']
+		stream = 'http:' + episode['mbr'][0]['src']
 		result.append({			
 			'name': name,
 			'stream': stream,
