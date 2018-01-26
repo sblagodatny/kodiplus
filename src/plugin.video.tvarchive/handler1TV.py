@@ -14,7 +14,6 @@ def getPrograms(liveOnly=False):
 	}
 	s = requests.Session()
 	s.verify = False
-	
 	if liveOnly:
 		url = 'https://www.1tv.ru/shows'
 		soup = BeautifulSoup(s.get(url, headers=headers).text, "html.parser")

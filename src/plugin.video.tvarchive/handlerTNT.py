@@ -11,6 +11,7 @@ def getPrograms(liveOnly=False):
 	}
 	url = 'http://tnt-online.ru/programs.htm'
 	s = requests.Session()
+	s.verify = False
 	soup = BeautifulSoup(s.get(url, headers=headers).text, "html.parser")
 	data = soup.find('div',{'id' : 'all-videos'})
 	for tag in data.find_all('div',recursive=False):
@@ -34,6 +35,7 @@ def getEpisodes(urlProgram):
 def getEpisodes2(urlProgram):
 	result = []	
 	s = requests.Session()
+	s.verify = False
 	headers = {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',		
 		'Referer': urlProgram
@@ -64,6 +66,7 @@ def getEpisodes1(urlProgram):
 		'sort': 'asc'
 	}
 	s = requests.Session()
+	s.verify = False
 	data = json.loads(s.get(url, params=params).text)
 	for ep in data['data']:
 		result.append({			
@@ -78,6 +81,7 @@ def getEpisodes1(urlProgram):
 	
 def getStreams(urlEpisode):
 	s = requests.Session()
+	s.verify = False
 	headers = {
 		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',	
 	}
@@ -95,14 +99,14 @@ def getStreams(urlEpisode):
 		'no_404': 'true',
 		'referer': urlRuTube
 	}
-	url = url + '?' + urllib.urlencode(params)
-	params = {
-		'urlText': url
-	}
-	url = 'http://ru4.gsr.awhoer.net/home287/cmd'	
+#	url = url + '?' + urllib.urlencode(params)
+#	params = {
+#		'urlText': url
+#	}
+#	url = 'http://ru4.gsr.awhoer.net/home287/cmd'	
 	data = json.loads(s.get(url, params=params, headers=headers).text)
 	url = data['video_balancer']['m3u8']
-	url = 'http://bl.rutube.ru/route/' + url.split('/route/')[1]
+#	url = 'http://bl.rutube.ru/route/' + url.split('/route/')[1]
 	data = s.get(url).text.splitlines()
 	streams = {}
 	for line in data:

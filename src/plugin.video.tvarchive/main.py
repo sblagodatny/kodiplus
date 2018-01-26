@@ -8,9 +8,6 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 
-#import vodTNT
-#import vod1TV
-
 
 _baseUrl = sys.argv[0]
 _handleId = int(sys.argv[1])
@@ -89,7 +86,8 @@ def handlerRoot():
 	### Build base list ###
 	channels = [
 		{'arhiveHandler': 'handlerTNT', 'name': 'ТНТ', 'thumb': 'TNT.png'},
-		{'arhiveHandler': 'handler1TV', 'name': 'Первый', 'thumb': '1TV.png'}
+		{'arhiveHandler': 'handler1TV', 'name': 'Первый', 'thumb': '1TV.png'},
+		{'arhiveHandler': 'handlerFriday', 'name': 'Пятница', 'thumb': 'Friday.png'}
 	]
 	
 	pathImg = _path + '/resources/img/'
