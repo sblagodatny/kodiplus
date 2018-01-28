@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.tvarchive'
-version = '1.10'
+addon = 'plugin.video.rutubeplus'
+version = '1.0'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
