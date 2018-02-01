@@ -8,7 +8,9 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 import rutube
-
+import youtube
+import util
+import google
 
 _baseUrl = sys.argv[0]
 _handleId = int(sys.argv[1])
@@ -19,20 +21,51 @@ _path = _addon.getAddonInfo('path')
 _forceLowQuality = False
 if _addon.getSetting('forceLowQuality')=='true':
 	_forceLowQuality = True
+
+
+_googleUser=_addon.getSetting('googleUser')
+_googlePassword=_addon.getSetting('googlePassword')
+_cookiesFolder = _addon.getSetting('cookiesFolder')
+if len(_cookiesFolder) == 0:
+	_cookiesFolder = _path	
+
 	
 reload(sys)  
 sys.setdefaultencoding('utf8')	
 
 
 def handlerPlay():
-	streams = rutube.getStreams(_params['videoId'])
-	quality = '640x360'
-	if _forceLowQuality:
-		quality = '512x288'
-	if quality in streams.keys():
-		stream = streams[quality]
-	else:
-		stream = streams [streams.keys()[0]]	
+#	streams = rutube.getStreams(_params['videoId'])
+#	quality = '640x360'
+#	if _forceLowQuality:
+#		quality = '512x288'
+#	if quality in streams.keys():
+#		stream = streams[quality]
+#	else:
+#		stream = streams [streams.keys()[0]]	
+
+	s = util.Session(_cookiesFolder)
+	google.loginVerify(s, _googleUser, _googlePassword)
+
+	
+	search = _params['contentName'] + ' ' + _params['season'] +' сезон ' + _params['episode'] +' серия '
+	
+	stream = None
+	videos = youtube.searchVideos(search, s)
+	if len(videos) == 0:
+		xbmcgui.Dialog().ok('Error', 'Unable to get YouTube stream')
+		return
+	video = videos[0]
+	if not xbmcgui.Dialog().ok('Notice', 'Found YouTube stream:', ' ',video['name']):
+		return
+			
+	streams = youtube.getStreams(video['id'], s)
+	itag = util.firstMatch(youtube.itagsVod, streams.keys())
+	if itag is None:
+		xbmcgui.Dialog().ok('Error', 'Unable to get YouTube stream')
+		return
+	
+	stream = streams[itag]
 	item=xbmcgui.ListItem()
 	item.setPath(stream)
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)	
@@ -52,7 +85,11 @@ def handlerContentVideos():
 		item.setInfo( type="Video", infoLabels=infoLabels )	
 		params = {
 			'handler': 'Play',
-			'videoId': video['id']			
+			'videoId': video['id'],
+			'name': video['name'],
+			'contentName': _params['contentName'],
+			'season': _params['season'],
+			'episode': video['episode']				
 		}		
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=False, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
@@ -67,7 +104,8 @@ def handlerSeasons():
 		params = {
 			'handler': 'ContentVideos',
 			'contentId': _params['contentId'],
-			'season': season
+			'season': season,
+			'contentName': _params['contentName']
 		}		
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)	

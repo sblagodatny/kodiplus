@@ -148,7 +148,8 @@ def nvld(data, key, nullvalue):
 	if key in data.keys():
 		return(data[key])
 	return nullvalue
-	
+
+
 	
 ### List utilities ###
 
@@ -172,6 +173,8 @@ def listToStr(list, delimiter):
 ### HTTP Utilities ###	
 	
 class Session (requests.Session):
+#	_userAgent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+#	_userAgent = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
 	_userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
 	def __init__(self, cookiesFolder = '.', xbmc = True):
 		requests.Session.__init__(self)	
@@ -179,11 +182,11 @@ class Session (requests.Session):
 		self.verify = False
 		self.headers.update({
 			'User-Agent': self._userAgent,
-			'Accept-Language': 'en-US,en;q=0.8,he;q=0.6,ru;q=0.4',
-			'Accept-Encoding': 'gzip, deflate, sdch, br',
-			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-			'Upgrade-Insecure-Requests': '1',
-			'Connection': 'keep-alive'
+#			'Accept-Language': 'en-US,en;q=0.8,he;q=0.6,ru;q=0.4',
+#			'Accept-Encoding': 'gzip, deflate, sdch, br',
+#			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+#			'Upgrade-Insecure-Requests': '1',
+#			'Connection': 'keep-alive'
 		})
 		self.cookiesFolder = cookiesFolder
 		self.xbmc = xbmc

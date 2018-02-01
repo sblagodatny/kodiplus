@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
     <category label="32000">
-        <setting id="forceLowQuality" type="bool" label="32001" default="false" />
+        <setting id="forceLowQuality" type="bool" label="32004" default="false" />
+		<setting id="googleUser" type="text" label="32001"  />
+		<setting id="googlePassword" type="text" label="32002" option="hidden" />
+		<setting id="cookiesFolder" type="folder" label="32003" source="auto" option="writeable"/>
     </category>
 </settings>
