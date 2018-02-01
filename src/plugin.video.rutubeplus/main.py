@@ -16,14 +16,23 @@ _params = dict(urlparse.parse_qsl(sys.argv[2][1:]))
 _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('path')
 
-
+_forceLowQuality = False
+if _addon.getSetting('forceLowQuality')=='true':
+	_forceLowQuality = True
 	
 reload(sys)  
 sys.setdefaultencoding('utf8')	
 
 
 def handlerPlay():
-	stream = rutube.getStream(_params['videoId'])
+	streams = rutube.getStreams(_params['videoId'])
+	quality = '640x360'
+	if _forceLowQuality:
+		quality = '512x288'
+	if quality in streams.keys():
+		stream = streams[quality]
+	else:
+		stream = streams [streams.keys()[0]]	
 	item=xbmcgui.ListItem()
 	item.setPath(stream)
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)	

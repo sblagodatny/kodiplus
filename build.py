@@ -4,7 +4,7 @@ import hashlib
 
 
 addon = 'plugin.video.rutubeplus'
-version = '1.1'
+version = '1.2'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

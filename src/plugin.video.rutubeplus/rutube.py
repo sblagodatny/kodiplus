@@ -64,7 +64,7 @@ def doProxy(url, s):
 	return s.get(proxy, params=params).text
 	
 	
-def getStream(videoId):
+def getStreams(videoId):
 	s = requests.Session()
 	s.verify = False	
 	url = 'http://rutube.ru/api/play/options/' + videoId + '/'	
@@ -84,8 +84,4 @@ def getStream(videoId):
 		if line.startswith('http'):
 			quality = line.split('?i=')[1].split('_')[0]
 			streams.update({quality: line})
-	if '512x288' in streams.keys():
-		return streams['512x288']
-	else:
-		return streams [streams.keys()[0]]
-
+	return streams
