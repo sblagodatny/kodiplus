@@ -73,7 +73,9 @@ def getStream(videoId):
 		'sqr4374_compat': 1,
 		'no_404': 'true'
 	}
-	data = json.loads(doProxy(url + '?' + urllib.urlencode(params),s))
+	data = json.loads(s.get(url, params=params).text)
+	if 'video_balancer' not in data:
+		data = json.loads(doProxy(url + '?' + urllib.urlencode(params),s))
 	url = data['video_balancer']['m3u8']
 	url = 'http://bl.rutube.ru/route/' + url.split('/route/')[1]
 	data = s.get(url).text.splitlines()
@@ -82,8 +84,8 @@ def getStream(videoId):
 		if line.startswith('http'):
 			quality = line.split('?i=')[1].split('_')[0]
 			streams.update({quality: line})
-	if '640x360' in streams.keys():
-		return streams['640x360']
+	if '512x288' in streams.keys():
+		return streams['512x288']
 	else:
 		return streams [streams.keys()[0]]
 
