@@ -35,42 +35,41 @@ sys.setdefaultencoding('utf8')
 
 
 def handlerPlay():
-#	streams = rutube.getStreams(_params['videoId'])
-#	quality = '640x360'
-#	if _forceLowQuality:
-#		quality = '512x288'
-#	if quality in streams.keys():
-#		stream = streams[quality]
-#	else:
-#		stream = streams [streams.keys()[0]]	
+	streams = rutube.getStreams(_params['videoId'])
+	quality = '640x360'
+	if _forceLowQuality:
+		quality = '512x288'
+	if quality in streams.keys():
+		stream = streams[quality]
+	else:
+		stream = streams [streams.keys()[0]]		
+	item=xbmcgui.ListItem()
+	item.setPath(stream)
+	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)	
 
+	
+def handlerPlayYouTube():
 	s = util.Session(_cookiesFolder)
 	google.loginVerify(s, _googleUser, _googlePassword)
-
-	
 	search = _params['contentName'] + ' ' + _params['season'] +' сезон ' + _params['episode'] +' серия '
-	
-	stream = None
 	videos = youtube.searchVideos(search, s)
 	if len(videos) == 0:
 		xbmcgui.Dialog().ok('Error', 'Unable to get YouTube stream')
 		return
 	video = videos[0]
 	if not xbmcgui.Dialog().ok('Notice', 'Found YouTube stream:', ' ',video['name']):
-		return
-			
+		return		
 	streams = youtube.getStreams(video['id'], s)
 	itag = util.firstMatch(youtube.itagsVod, streams.keys())
 	if itag is None:
 		xbmcgui.Dialog().ok('Error', 'Unable to get YouTube stream')
 		return
-	
 	stream = streams[itag]
 	item=xbmcgui.ListItem()
 	item.setPath(stream)
-	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)	
-
-
+	xbmc.Player().play(stream,item) 
+	
+	
 def handlerContentVideos():
 	videos = rutube.contentVideos(_params['contentId'], _params['season'])
 	xbmcplugin.setContent(_handleId, 'movies')
@@ -79,18 +78,24 @@ def handlerContentVideos():
 			'plot': 'Дата выпуска: ' + video['created'] + "\n \n" + video['description'],
 			'duration': float(video['duration'])
 		}
+		contextMenuItems = []
 		item = xbmcgui.ListItem(video['name'])
 		item.setProperty("IsPlayable","true")
 		item.setArt({'thumb': video["thumb"], 'poster': video["thumb"], 'fanart': video["thumb"]})
 		item.setInfo( type="Video", infoLabels=infoLabels )	
 		params = {
-			'handler': 'Play',
-			'videoId': video['id'],
-			'name': video['name'],
+			'handler': 'PlayYouTube',
 			'contentName': _params['contentName'],
 			'season': _params['season'],
 			'episode': video['episode']				
-		}		
+		}
+		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode(params) + ')'
+		contextMenuItems.append(('Play from YouTube',contextCmd))													
+		item.addContextMenuItems(contextMenuItems, replaceItems=False)		
+		params = {
+			'handler': 'Play',
+			'videoId': video['id'],			
+		}
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=False, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
 	
