@@ -3,7 +3,7 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.rutubeplus'
+addon = 'plugin.video.youtubeplus'
 version = '1.3'
 
 basePath = os.getcwd()

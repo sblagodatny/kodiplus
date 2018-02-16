@@ -202,17 +202,8 @@ def getPlayer(session, id):
 	
 def getCipher(session, player):
 	playerJS = session.get( youtubeUrl + player.get("assets", {}).get("js")).text	
-	tmp = playerJS
-	while True:
-		func, i = util.substr('set("signature",','(',tmp)
-		if not '.sig' in func:
-			break
-		if func is None:
-			raise Exception ('Unable to find cipher function')
-		tmp = tmp[i:]
 	jsi = JSInterpreter(playerJS)
-	cipherFunction = jsi.extract_function(func)
-	return cipherFunction
+	return jsi.extract_function('FK')
 	
 	
 def getStreams(id, session):	
