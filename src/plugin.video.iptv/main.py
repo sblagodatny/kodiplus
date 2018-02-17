@@ -31,8 +31,8 @@ def listChannels(channels, epg):
 	xbmcplugin.setContent(_handleId, 'movies')
 	for channel in channels:
 		try:
-				epgc = epg[channel['tvg_id']]
-				infoLabels = {'plot': epgc['title'] + "\n\n" + epgc['description']}
+			epgc = epg[channel['tvg_id']]
+			infoLabels = {'plot': util.bold(epgc['title']) + "\n\n" + 'Осталось: ' + str(int(epgc['remaining']/60)) + " минут" + "\n\n" + epgc['description']}
 		except:
 			infoLabels = {}	
 		item = xbmcgui.ListItem(channel['name'])
@@ -64,23 +64,24 @@ def getChannels():
 
 	
 def getEPG():
-	try:
-		epg = {}
-		f = xbmcvfs.File (_epgFile, 'r')
-		data = f.read()
-		f.close()
-		data = BeautifulSoup(data, "html.parser")
-		now = util.now()
-		for program in data.find_all('programme'):
-			start = util.strToDateTime(program['start'])
-			stop = util.strToDateTime(program['stop'])
-			if now >= start and now < stop:
-				epg.update({
-					program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text()}
-				})	
-		return epg
-	except:
-		return None
+#	try:
+	epg = {}
+	f = xbmcvfs.File (_epgFile, 'r')
+	data = f.read()
+	f.close()
+	data = BeautifulSoup(data, "html.parser")
+	now = util.now()
+	for program in data.find_all('programme'):
+		start = util.strToDateTime(program['start'])
+		stop = util.strToDateTime(program['stop'])
+		if now >= start and now < stop:
+			remaining = (stop-now).seconds
+			epg.update({
+				program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text(), 'remaining': remaining}
+			})	
+	return epg
+#	except:
+#		return None
 	
 def handlerRoot():
 	reload(sys)
