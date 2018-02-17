@@ -241,7 +241,7 @@ def strToDateTime(str):
 def now():
 	offset = 2
 	str = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M')
-	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10])-offset, minute=int(str[10:12]), tzinfo=timezone(offset * 3600) )
+	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10]), minute=int(str[10:12]), tzinfo=timezone(offset * 3600) )
 
 	
 	

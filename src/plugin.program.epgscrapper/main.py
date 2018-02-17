@@ -55,7 +55,12 @@ def handlerRoot():
 			xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(_addon.getAddonInfo('name'),channel['name'], 1, _addon.getAddonInfo('icon')))
 			f.write('<channel id="' + channel['id'] + '" ><display-name>' + channel['name'].encode('utf-8') + '</display-name></channel>' + "\n")
 			scrapper = getattr(__import__('scrappers'), 'getEpg' + channel['id'].split('_')[0])			
-			programs = scrapper(channel['id'].split('_')[1], _epgDays)
+			for i in range (0,3):
+				try:
+					programs = scrapper(channel['id'].split('_')[1], _epgDays)
+					break
+				except:
+					None
 			for program in programs:
 				start = datetime.datetime.strftime(program['start'],'%Y%m%d%H%M%S %z')
 				stop = datetime.datetime.strftime(program['stop'],'%Y%m%d%H%M%S %z')
