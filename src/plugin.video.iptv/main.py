@@ -7,8 +7,10 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 import xbmcvfs
-#import util
 import datetime
+import util
+from bs4 import BeautifulSoup
+
 
 
 
@@ -25,12 +27,16 @@ _iconsFolder = _addon.getSetting('iconsFolder')
 	
 	
 	
-def listChannels(channels):
+def listChannels(channels, epg):
 	xbmcplugin.setContent(_handleId, 'movies')
 	for channel in channels:
-		infoLabels = {
-			'plot': ''
-		}
+		
+		try:
+			epgc = epg[channel['tvg_id']]
+			infoLabels = {'plot': epgc['title'] + "\n\n" + epgc['description']}
+		except:
+			infoLabels = {}
+		
 		item = xbmcgui.ListItem(channel['name'])
 		item.setProperty("IsPlayable","true")
 		logo = _iconsFolder + channel['tvg_logo']
@@ -59,10 +65,26 @@ def getChannels():
 	return channels
 
 	
+def getEPG():
+	epg = {}
+	f = xbmcvfs.File (_epgFile, 'r')
+	data = f.read()
+	f.close()
+	data = BeautifulSoup(data, "html.parser")
+	now = util.now()
+	for program in data.find_all('programme'):
+		start = util.strToDateTime(program['start'])
+		stop = util.strToDateTime(program['stop'])
+		if now >= start and now < stop:
+			epg.update({
+				program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text()}
+			})
+	return epg
+	
 def handlerRoot():
 	reload(sys)
 	sys.setdefaultencoding("utf-8")	
-	listChannels(getChannels())
+	listChannels(getChannels(), getEPG())
 	
 
 if len(_playlistFile) == 0 or len(_iconsFolder) == 0:
