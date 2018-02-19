@@ -4,7 +4,7 @@ import hashlib
 
 
 addon = 'plugin.video.iptv'
-version = '1.3'
+version = '1.4'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
