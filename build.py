@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.youtubeplus'
-version = '1.4'
+addon = 'plugin.video.tvarchive'
+version = '1.11'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

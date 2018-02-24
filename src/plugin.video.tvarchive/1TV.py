@@ -1,46 +1,40 @@
+# coding: utf-8
+
 import requests
 from bs4 import BeautifulSoup
 import json
-import util
-import urllib
 import urlparse
+import urllib
+
 
 _userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
 
-def getPrograms(liveOnly=False):
+
+def getCategories():
+	return [
+		{'name': 'Теле-Проекты (текущий сезон)', 'url': 'https://www.1tv.ru/shows'}
+#		{'name': 'Сериалы', 'url': 'https://kino.1tv.ru/series'}
+	]
+	
+
+def getPrograms(urlCategory):
 	result = []	
 	headers = {
 		'User-Agent': _userAgent,
 	}
 	s = requests.Session()
 	s.verify = False
-	if liveOnly:
-		url = 'https://www.1tv.ru/shows'
-		soup = BeautifulSoup(s.get(url, headers=headers).text, "html.parser")
-		data = soup.find('section', class_='projects')	
-		for tag in data.find_all('a',{'target': '_self'}):
-			result.append({			
-				'name': tag.find('img')['alt'],
-				'url': 'https://www.1tv.ru' + tag['href'],
-				'thumb': 'http:' + tag.find('img')['src'],					
-				'description': tag.find('p').get_text()
-			})
+	soup = BeautifulSoup(s.get(urlCategory, headers=headers).text, "html.parser")
+	data = soup.find('section', class_='projects')	
+	for tag in data.find_all('a',{'target': '_self'}):
+		result.append({			
+			'name': tag.find('img')['alt'],
+			'url': 'https://www.1tv.ru' + tag['href'],
+			'thumb': 'http:' + tag.find('img')['src'],					
+			'description': tag.find('p').get_text()
+		})
+	return result
 	
-	else:
-		url = 'https://www.1tv.ru/shows?all'
-		soup = BeautifulSoup(s.get(url, headers=headers).text, "html.parser")
-		data = soup.find('section', class_='archive')
-		for tag in data.find_all('a',{'target': '_self'}):
-			result.append({			
-				'name': tag.get_text(),
-				'url': 'https://www.1tv.ru' + tag['href'],
-				'thumb': '',					
-				'description': ''
-			})
-			
-	return (result)	
-
-
 
 def getEpisodes(urlProgram):
 	result = []	
@@ -68,7 +62,7 @@ def getEpisodes(urlProgram):
 		stream = 'http:' + episode['mbr'][0]['src']
 		result.append({			
 			'name': name,
-			'stream': stream,
+			'url': stream,
 			'thumb': 'http:' + episode['poster_thumb'],
 			'description': description,
 			'duration': int(episode['duration'])
@@ -76,4 +70,5 @@ def getEpisodes(urlProgram):
 	return(result)
 
 
-	
+def getStream(urlVideo):
+	return urlVideo
