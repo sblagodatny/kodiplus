@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.tvarchive'
-version = '1.11'
+addon = 'plugin.program.epgscrapper'
+version = '1.5'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
