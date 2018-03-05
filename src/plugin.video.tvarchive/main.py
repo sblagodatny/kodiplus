@@ -8,7 +8,9 @@ import xbmcgui
 import xbmcplugin
 import xbmcaddon
 import xbmcvfs
-
+import watchlog
+import os
+import util
 
 
 _baseUrl = sys.argv[0]
@@ -19,6 +21,7 @@ _path = _addon.getAddonInfo('path')
 	
 _playlistFile = _addon.getSetting('playlistFile')
 _iconsFolder = _addon.getSetting('iconsFolder')
+_watchlogPath = _addon.getSetting('watchlogFolder') +  '/watchlog.db'
 
 reload(sys)
 sys.setdefaultencoding("utf-8")	
@@ -60,27 +63,70 @@ def handlerListPrograms():
 	xbmcplugin.endOfDirectory(_handleId)
 
 	
-def handlerListEpisodes():
+def handlerWatched():	
+	if _params['watched'] == 'true':
+		watchlog.setWatched(_watchlogPath, _baseUrl, _params['item'])
+	else:
+		watchlog.setUnWatched(_watchlogPath,_baseUrl, _params['item'])
+	flagSet('refreshEpisodes')
+	xbmc.executebuiltin("Container.Refresh()")
+
+	
+def flagSet(flag):
+	if flagIsSet(flag):
+		return
+	f = open(_path + '/' + flag,'w') 
+	f.write("1")
+	f.close()
+
+def flagUnSet(flag):
+	os.remove(_path + '/' + flag)
+
+def flagIsSet(flag):
+	if os.path.isfile(_path + '/' + flag):
+		return True
+	else:
+		return False
+	
+	
+def handlerListEpisodes():	
 	xbmcplugin.setContent(_handleId, 'movies')
-	handler = getattr(__import__(_params['archive']), 'getEpisodes' )	
-	episodes = handler(_params['urlProgram'])
+	watchlog.init(_watchlogPath,_path + '/watchlog.db')
+	if flagIsSet('refreshEpisodes'):
+		flagUnSet('refreshEpisodes')
+		episodes = util.fileToObj(_path + '/' + 'content')
+	else:
+		handler = getattr(__import__(_params['archive']), 'getEpisodes' )	
+		episodes = handler(_params['urlProgram'])
+		util.objToFile(episodes, _path + '/' + 'content')
 	for episode in episodes:
-		item = xbmcgui.ListItem(episode['name'])
-		item.setArt({'thumb': episode["thumb"], 'poster': episode["thumb"], 'fanart': episode["thumb"]})
 		infoLabels = {}
+		contextMenuItems = []
+		if watchlog.isWatched(_watchlogPath, _baseUrl, episode['name']):
+			infoLabels['playcount'] = 1
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Watched', 'item': episode['name'], 'watched': 'false'}) + ')'
+			contextMenuItems.append(('UnWatched',contextCmd))
+		else:
+			infoLabels['playcount'] = 0
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Watched', 'item': episode['name'], 'watched': 'true'}) + ')'
+			contextMenuItems.append(('Watched',contextCmd))
+		item = xbmcgui.ListItem(episode['name'])	
+		item.setArt({'thumb': episode["thumb"], 'poster': episode["thumb"], 'fanart': episode["thumb"]})
 		if 'duration' in episode.keys():
 			infoLabels['duration'] = float(episode['duration'])
 		if 'description' in episode.keys():
 			infoLabels['plot'] = episode['description']
 		item.setProperty("IsPlayable","true")
 		item.setInfo( type="Video", infoLabels=infoLabels )	
+		item.addContextMenuItems(contextMenuItems, replaceItems=True)	
 		params = {
 			'handler': 'PlayEpisode',
 			'archive': _params['archive'],
 			'urlEpisode': episode['url']
 		}
-		url = _baseUrl+'?' + urllib.urlencode(params)						
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=False, listitem=item)
+		url = _baseUrl+'?' + urllib.urlencode(params)								
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
+		
 	xbmcplugin.endOfDirectory(_handleId)
 	
 	
@@ -89,8 +135,8 @@ def handlerPlayEpisode():
 	stream = handler(_params['urlEpisode'])
 	item=xbmcgui.ListItem()
 	item.setPath(stream)
-	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		
-	
+#	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		
+	xbmc.Player().play(stream,item)
 
 
 def listChannels(channels):

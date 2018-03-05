@@ -3,5 +3,6 @@
     <category label="32000">
 		<setting id="playlistFile" type="file" label="32005" />    
 		<setting id="iconsFolder" type="folder" label="32003" />     	
+		<setting id="watchlogFolder" type="folder" label="32004" />     	
     </category>
 </settings>
