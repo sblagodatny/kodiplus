@@ -141,7 +141,9 @@ def handlerPlayEpisode():
 
 def listChannels(channels):
 #	xbmcplugin.setContent(_handleId, 'movies')
-	for channel in channels:																		
+	for channel in channels:	
+		if 'archive' not in channel.keys():
+			continue
 		item = xbmcgui.ListItem(channel['name'])
 		if 'tvg_logo' in channel.keys():
 			logo = _iconsFolder + channel['tvg_logo']
@@ -162,31 +164,9 @@ def listChannels(channels):
 	xbmcplugin.endOfDirectory(_handleId)
 
 	
-def getChannels():	
-	channels = []
-	f = xbmcvfs.File (_playlistFile, 'r')
-	data = f.read().splitlines()
-	for i in range(0, len(data)):
-		if data[i].startswith('#EXTINF'):
-			channel = {
-				'name': data[i].split(',')[1],
-			}			
-			try:
-				channel.update({'archive': data[i].split('archive="')[1].split('"')[0]})
-			except:
-				continue			
-			try:				
-				channel.update({'tvg_logo': data[i].split('tvg-logo="')[1].split('"')[0]})
-			except:
-				None			
-			channels.append(channel)
-			
-	f.close()
-	return channels
-
-	
 def handlerRoot():
-	listChannels(getChannels())	
+	channels = util.m3uChannels(_playlistFile)
+	listChannels(channels)	
 
 	
 if 'handler' in _params.keys():

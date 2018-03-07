@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.iptv'
-version = '1.5'
+addon = 'plugin.program.epgscrapper'
+version = '1.6'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

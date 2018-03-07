@@ -3,9 +3,6 @@ import cPickle as pickle
 import requests
 import time
 import datetime
-import xbmcvfs
-from bs4 import BeautifulSoup
-
 
 
 
@@ -97,13 +94,21 @@ def bold(str):
 	
 	
 ### File utilities ###	
-def objToFile(obj, path):
-	output = xbmcvfs.File (path, 'w')
+
+def fopen(path, mode, xbmc = True):
+	if xbmc:
+		import xbmcvfs
+		return(xbmcvfs.File (path, mode))
+	else:
+		return(open(path, mode))
+
+def objToFile(obj, path, xbmc = True):
+	output = fopen(path, 'w', xbmc)
 	pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 	output.close()
 	
-def fileToObj(path):
-	input = xbmcvfs.File (path, 'r')
+def fileToObj(path, xbmc = True):
+	input = fopen(path, 'r', xbmc)
 	try:
 		obj = pickle.loads(input.read())
 	except:
@@ -169,7 +174,7 @@ def listToStr(list, delimiter):
 	
 class Session (requests.Session):
 	_userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
-	def __init__(self, cookiesFolder = '.'):
+	def __init__(self, cookiesFolder = '.', xbmc = True):
 		requests.Session.__init__(self)	
 		requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 		self.verify = False
@@ -179,13 +184,13 @@ class Session (requests.Session):
 		self.cookiesFolder = cookiesFolder
 		self.xbmc = xbmc
 		cookies = self.cookies
-		self.cookies = fileToObj(cookiesFolder + '/cookies')
+		self.cookies = fileToObj(cookiesFolder + '/cookies', self.xbmc)
 		if self.cookies is None:
 			self.cookies = cookies
 	def saveCookies(self):
-		objToFile(self.cookies, self.cookiesFolder + '/cookies')
+		objToFile(self.cookies, self.cookiesFolder + '/cookies', self.xbmc)
 	def download(self, url, path):
-		output = fopen(path, 'w')
+		output = fopen(path, 'w', self.xbmc)
 		r = self.get(url)
 		for chunk in r.iter_content(chunk_size=1024): 
 			if chunk:
@@ -230,69 +235,3 @@ class timezone(datetime.tzinfo):
 	def dst(self, dt):
 		return self._dst
 
-def strToDateTime(str):
-	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10]), minute=int(str[10:12]), tzinfo=timezone(int(str[15:18]) * 3600) )
-
-def now():
-	offset = 2
-	str = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M')
-	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10]), minute=int(str[10:12]), tzinfo=timezone(offset * 3600) )
-
-### Other ###
-def m3uChannels(m3uFile):	
-	channels = []
-	f = xbmcvfs.File (m3uFile, 'r')
-	data = f.read().splitlines()
-	for i in range(0, len(data)):
-		if data[i].startswith('#EXTINF'):
-			channel = {
-				'name': data[i].split(',')[1],
-				'url': data[i+1]
-			}
-			try:
-				channel.update({'tvg_id': data[i].split('tvg-id="')[1].split('"')[0]})
-			except:
-				None
-			try:				
-				channel.update({'tvg_logo': data[i].split('tvg-logo="')[1].split('"')[0]})
-			except:
-				None
-			try:				
-				channel.update({'tvg_shift': data[i].split('tvg-shift="')[1].split('"')[0]})
-			except:
-				None
-			try:				
-				channel.update({'archive': data[i].split('archive="')[1].split('"')[0]})
-			except:
-				None
-			channels.append(channel)
-	f.close()
-	return channels
-
-
-def xmltvCurrentPrograms(channels, epgFile):
-	tvg_shift = {}
-	for channel in channels:
-		if 'tvg_shift' in channel.keys():
-			tvg_shift.update({channel['tvg_id']: channel['tvg_shift']})
-	try:
-		epg = {}
-		f = xbmcvfs.File (epgFile, 'r')
-		data = f.read()
-		f.close()
-		data = BeautifulSoup(data, "html.parser")
-		n = now()
-		for program in data.find_all('programme'):
-			start = strToDateTime(program['start'])
-			stop = strToDateTime(program['stop'])
-			if program['channel'] in tvg_shift.keys():
-				start = start + datetime.timedelta(hours=int(tvg_shift[program['channel']]))
-				stop = stop + datetime.timedelta(hours=int(tvg_shift[program['channel']]))			
-			if n >= start and n < stop:
-				epg.update({
-					program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text(), 'remaining': stop-n}
-				})	
-		return epg
-	except:
-		raise
-		return None
