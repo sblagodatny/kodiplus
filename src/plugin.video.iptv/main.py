@@ -10,7 +10,6 @@ import xbmcvfs
 import datetime
 import util
 import urllib
-from bs4 import BeautifulSoup
 
 
 
@@ -35,70 +34,54 @@ def listChannels(channels, epg):
 		if 'tvg_id' in channel.keys():
 			try:
 				epgc = epg[channel['tvg_id']]
-				infoLabels = {'plot': util.bold(epgc['title']) + "\n\n" + 'Осталось: ' + str(int(epgc['remaining']/60)) + " минут" + "\n\n" + epgc['description']}
+				infoLabels = {'plot': util.bold(epgc['title']) + '  [' + str(epgc['remaining']) + "] \n\n" + epgc['description']}
 			except:
 				None			
 		contextMenuItems = []
 		contextCmd = 'Container.Refresh()'
-		contextMenuItems.append(('Refresh',contextCmd))															
+		contextMenuItems.append(('Refresh',contextCmd))
+		if 'archive' in channel.keys():
+			archive = channel['archive']
+			archiveParams = None
+			if '|' in archive:
+				archiveParams = archive.split('|')[1]
+				archive = archive.split('|')[0]
+			params = {
+				'handle': _handleId,
+				'handler': 'ListCategories',
+				'archive': archive
+			}	
+			if archiveParams is not None:
+				params.update({'archiveParams': archiveParams})
+			archiveAddonUrl = 'plugin://plugin.video.tvarchive/'
+			contextCmd = 'ActivateWindow(Videos,' + archiveAddonUrl + '?' + urllib.urlencode(params) + ',return)'
+			contextMenuItems.append(('Arhive',contextCmd))
 		item = xbmcgui.ListItem(channel['name'])
 		item.addContextMenuItems(contextMenuItems, replaceItems=True)
 		if 'tvg_logo' in channel.keys():
 			logo = _iconsFolder + channel['tvg_logo']
 			item.setArt({'thumb': logo, 'poster': logo, 'fanart': logo})
-		item.setInfo( type="Video", infoLabels=infoLabels )	
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=channel['url'], isFolder=False, listitem=item)
+		item.setInfo( type="Video", infoLabels=infoLabels )
+		params = {
+			'handler': 'Play',
+			'name': channel['name'],
+			'url': channel['url']
+		}
+		url = _baseUrl+'?' + urllib.urlencode(params)
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
-
 	
-def getChannels():	
-	channels = []
-	f = xbmcvfs.File (_playlistFile, 'r')
-	data = f.read().splitlines()
-	for i in range(0, len(data)):
-		if data[i].startswith('#EXTINF'):
-			channel = {
-				'name': data[i].split(',')[1],
-				'url': data[i+1]
-			}
-			try:
-				channel.update({'tvg_id': data[i].split('tvg-id="')[1].split('"')[0]})
-			except:
-				None
-			try:				
-				channel.update({'tvg_logo': data[i].split('tvg-logo="')[1].split('"')[0]})
-			except:
-				None
-			channels.append(channel)
-	f.close()
-	return channels
-
 	
-def getEPG():
-	try:
-		epg = {}
-		f = xbmcvfs.File (_epgFile, 'r')
-		data = f.read()
-		f.close()
-		data = BeautifulSoup(data, "html.parser")
-		now = util.now()
-		for program in data.find_all('programme'):
-			start = util.strToDateTime(program['start'])
-			stop = util.strToDateTime(program['stop'])
-			if now >= start and now < stop:
-				remaining = (stop-now).seconds
-				epg.update({
-					program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text(), 'remaining': remaining}
-				})	
-		return epg
-	except:
-		return None
+def handlerPlay():		
+	item=xbmcgui.ListItem(_params['name'])
+	item.setPath(_params['url'])
+	xbmc.Player().play(_params['url'],item)
 
 
 def handlerRoot():
-	reload(sys)
-	sys.setdefaultencoding("utf-8")	
-	listChannels(getChannels(), getEPG())
+	channels = util.m3uChannels(_playlistFile)
+	epg = util.xmltvCurrentPrograms(channels, _epgFile)
+	listChannels(channels, epg)
 	
 	
 if len(_playlistFile) == 0 or len(_iconsFolder) == 0:
