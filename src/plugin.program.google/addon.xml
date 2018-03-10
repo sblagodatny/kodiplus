@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.program.google" version="1.0" name="Google Account" provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.11"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>executable</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">Google Account</summary>
+  <description lang="en">Google Account</description>
+</extension>
+</addon>
