@@ -5,12 +5,10 @@ import urlparse
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcvfs
+import xbmcaddon
 import urllib
 import urllib2
-import google
 import youtube
-import xbmcaddon
 import util
 
 
@@ -24,12 +22,8 @@ _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('icon').replace('icon.png','')
 	
 
-_googleUser=_addon.getSetting('googleUser')
-_googlePassword=_addon.getSetting('googlePassword')
 _useDash=_addon.getSetting('useDash')
 _cookiesFolder = _addon.getSetting('cookiesFolder')
-if len(_cookiesFolder) == 0:
-	_cookiesFolder = _path	
 
 	
 def listPlaylists(content):
@@ -73,7 +67,6 @@ def listVideos(content):
 	
 def handlerSearchPlaylists():
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.searchPlaylists(_params['searchStr'], s)
 	listPlaylists(content)
 	xbmcplugin.endOfDirectory(_handleId)		
@@ -81,7 +74,6 @@ def handlerSearchPlaylists():
 
 def handlerSearchVideos():
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.searchVideos(_params['searchStr'], s)
 	listVideos(content)	
 	xbmcplugin.endOfDirectory(_handleId)
@@ -89,7 +81,6 @@ def handlerSearchVideos():
 	
 def handlerPlaylistVideos():	
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.getPlaylistVideos(_params['id'], s)
 	listVideos(content)	
 	xbmcplugin.endOfDirectory(_handleId)		
@@ -97,7 +88,6 @@ def handlerPlaylistVideos():
 	
 def handlerMyVideos():	
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.getMyVideos(s)
 	listVideos(content)
 	xbmcplugin.endOfDirectory(_handleId)	
@@ -105,7 +95,6 @@ def handlerMyVideos():
 
 def handlerMyPlaylists():	
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.getMyPlaylists(s)
 	listPlaylists(content)
 	xbmcplugin.endOfDirectory(_handleId)		
@@ -113,7 +102,6 @@ def handlerMyPlaylists():
 
 def handlerSavedPlaylists():	
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	content = youtube.getSavedPlaylists(s)
 	listPlaylists(content)
 	xbmcplugin.endOfDirectory(_handleId)			
@@ -121,11 +109,9 @@ def handlerSavedPlaylists():
 	
 def handlerPlay():	
 	s = util.Session(_cookiesFolder)
-	google.loginVerify(s, _googleUser, _googlePassword)
 	item=xbmcgui.ListItem()
 	cookies = s.cookies.get_dict(domain='.youtube.com')
-	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}
-	
+	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}	
 	if _params['privacy'] == 'Public' and _params['live'] == 'False' and _useDash=='true':
 		dash = youtube.getDash(_params['id'], s)	
 		item.setPath(dash )
@@ -172,8 +158,11 @@ def handlerRoot():
 	xbmcplugin.endOfDirectory(_handleId)
 
 	
-if 'handler' in _params.keys():
-	globals()['handler' + _params['handler']]()
-else:
-	handlerRoot()
-	
+if len(_cookiesFolder) == 0:
+	xbmcgui.Dialog().ok('Error', 'Please configure settings')
+else:	
+	if 'handler' in _params.keys():
+		globals()['handler' + _params['handler']]()
+	else:
+		handlerRoot()
+

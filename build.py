@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.program.epgscrapper'
-version = '1.6'
+addon = 'plugin.video.youtubeplus'
+version = '1.5'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

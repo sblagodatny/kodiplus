@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <strings>
 	<string id="32000">General</string>
-	<string id="32001">Google User</string>
-	<string id="32002">Google Password</string>
 	<string id="32003">Cookies Folder</string>
 	<string id="32004">Use Dash</string>
 </strings>

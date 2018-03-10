@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import requests
-import urllib
 import util
-import json
-import re
-from jsinterp import JSInterpreter
 from bs4 import BeautifulSoup
-import re
-import Cookie
-import ast
+import json
+from jsinterp import JSInterpreter
+import urllib
 import urllib2
-import google
 import urlparse
 
 
@@ -68,7 +62,8 @@ def getMyPlaylists(session):
 
 def getSavedPlaylists(session):
 	result = []
-	channel = google.getUserDetails(session)['channel']
+	loginInfo = session.cookies._find(name='MyLoginInfo', domain='www.google.com').split('&')
+	channel = loginInfo[1]	
 	content = session.get( youtubeUrl + 'channel/' + channel + '/playlists' + '?' + urllib.urlencode({'sort': 'dd', 'view_as': 'subscriber', 'view': '52', 'shelf_id': '0'})).text
 	dummy, i = util.substr ('[{"gridRenderer":{"items"',':',content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
