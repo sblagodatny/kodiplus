@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.program.google'
-version = '1.0'
+addon = 'plugin.image.gphotos'
+version = '1.1'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
