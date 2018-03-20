@@ -10,7 +10,8 @@ import xbmcvfs
 import datetime
 import util
 import urllib
-
+import os
+import datetime
 
 
 
@@ -23,6 +24,7 @@ _path = _addon.getAddonInfo('icon').replace('icon.png','')
 _epgFile = _addon.getSetting('epgFile')
 _playlistFile = _addon.getSetting('playlistFile')
 _iconsFolder = _addon.getSetting('iconsFolder')
+_forceMxPlayer = _addon.getSetting('forceMxPlayer')
 	
 	
 	
@@ -33,8 +35,8 @@ def listChannels(channels, epg):
 		infoLabels = {}	
 		if 'tvg_id' in channel.keys():
 			try:
-				epgc = epg[channel['tvg_id']]
-				infoLabels = {'plot': util.bold(epgc['title']) + '  [' + str(epgc['remaining']) + "] \n\n" + epgc['description']}
+				program = util.xmltvGetCurrent(epg, channel['tvg_id'], util.nvld(channel, 'tvg_shift', None))
+				infoLabels = {'plot': util.bold(program['title']) + '  [' + str(program['remaining']) + "] \n\n" + program['description']}
 			except:
 				None			
 		contextMenuItems = []
@@ -73,15 +75,37 @@ def listChannels(channels, epg):
 	
 	
 def handlerPlay():		
-	item=xbmcgui.ListItem(_params['name'])
-	item.setPath(_params['url'])
-	xbmc.Player().play(_params['url'],item)
+	if _forceMxPlayer =='true':
+		cmd=[
+			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',_params['url'],
+			'--es','title',_params['name'],
+#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+			'--activity-clear-task','--user','0'
+		]
+		import subprocess
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		stdout, stderr = p.communicate()
+#		xbmcgui.Dialog().ok('Finished', stdout, stderr)
+	else:
+		item=xbmcgui.ListItem(_params['name'])
+		item.setPath(_params['url'])
+		xbmc.Player().play(_params['url'],item)
 
+def getEPG():
+	if os.path.isfile(_path + '/epg'):
+		mtime = datetime.datetime.fromtimestamp(os.path.getmtime(_path + '/epg'))
+		midnight = datetime.datetime.combine(datetime.date.today(), datetime.time.min)
+		if mtime > midnight:
+			epg = util.fileToObj(_path + '/epg')
+			return epg
+	epg = util.xmltvParse(_epgFile)
+	util.objToFile(epg,_path + '/epg')
+	return epg
 
+	
 def handlerRoot():
 	channels = util.m3uChannels(_playlistFile)
-	epg = util.xmltvCurrentPrograms(channels, _epgFile)
-	listChannels(channels, epg)
+	listChannels(channels, getEPG())
 	
 	
 if len(_playlistFile) == 0 or len(_iconsFolder) == 0:

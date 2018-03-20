@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.image.gphotos'
-version = '1.1'
+addon = 'plugin.video.iptv'
+version = '1.6'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

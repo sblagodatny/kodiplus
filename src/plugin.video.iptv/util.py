@@ -10,8 +10,6 @@ from bs4 import BeautifulSoup
 
 
 
-
-
 ### String utilities ###
 
 def setDefaultEncoding(encoding='utf-8'):
@@ -98,20 +96,14 @@ def bold(str):
 	
 ### File utilities ###	
 def objToFile(obj, path):
-	output = xbmcvfs.File (path, 'w')
-	pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
-	output.close()
+	with open(path, 'wb') as output:
+		pickle.dump(obj, output, protocol=pickle.HIGHEST_PROTOCOL)
 	
 def fileToObj(path):
-	input = xbmcvfs.File (path, 'r')
-	try:
-		obj = pickle.loads(input.read())
-	except:
-		input.close()
-		return None
-	input.close()
+	with open(path, 'rb') as input:
+		obj = pickle.load(input)
 	return obj
-
+		
 def fileName(path):
 	if '/' in path:
 		return path.split('/')[-1]
@@ -222,7 +214,7 @@ def urlencode(params):
 class timezone(datetime.tzinfo):
 	_offset = None
 	_dst = None
-	def __init__(self, seconds):
+	def __init__(self, seconds=0):
 		self._offset = datetime.timedelta(seconds = seconds)
 		self._dst = datetime.timedelta(0)
 	def utcoffset(self, dt):
@@ -268,31 +260,34 @@ def m3uChannels(m3uFile):
 			channels.append(channel)
 	f.close()
 	return channels
-
-
-def xmltvCurrentPrograms(channels, epgFile):
-	tvg_shift = {}
-	for channel in channels:
-		if 'tvg_shift' in channel.keys():
-			tvg_shift.update({channel['tvg_id']: channel['tvg_shift']})
-	try:
-		epg = {}
-		f = xbmcvfs.File (epgFile, 'r')
-		data = f.read()
-		f.close()
-		data = BeautifulSoup(data, "html.parser")
-		n = now()
-		for program in data.find_all('programme'):
-			start = strToDateTime(program['start'])
-			stop = strToDateTime(program['stop'])
-			if program['channel'] in tvg_shift.keys():
-				start = start + datetime.timedelta(hours=int(tvg_shift[program['channel']]))
-				stop = stop + datetime.timedelta(hours=int(tvg_shift[program['channel']]))			
-			if n >= start and n < stop:
-				epg.update({
-					program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text(), 'remaining': stop-n}
-				})	
-		return epg
-	except:
-		raise
-		return None
+	
+	
+def xmltvGetCurrent(epg, tvg_id, tvg_shift):
+	n = now()
+	if tvg_shift is not None:	
+		n = n + datetime.timedelta(hours=int(tvg_shift))
+	for program in epg[tvg_id]:
+		if n >= program['start'] and n < program['stop']:
+			program.update({'remaining': program['stop']-n})
+			return program	
+	return None			
+	
+	
+def xmltvParse(epgFile):
+	epg = {}
+	f = xbmcvfs.File (epgFile, 'r')
+	data = f.read()
+	f.close()
+	data = BeautifulSoup(data, "html.parser")
+	for program in data.find_all('programme'):
+		start = strToDateTime(program['start'])
+		stop = strToDateTime(program['stop'])
+		if program['channel'] not in epg.keys():
+			epg.update({program['channel']:[]})
+		epg[program['channel']].append({
+			'title': program.find('title').get_text(), 
+			'description': program.find('desc').get_text(),
+			'start': start,
+			'stop':stop 
+		})
+	return epg
