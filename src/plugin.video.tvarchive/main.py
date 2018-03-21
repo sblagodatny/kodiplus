@@ -124,8 +124,11 @@ def handlerListEpisodes():
 			'handler': 'PlayEpisode',
 			'archive': _params['archive'],
 			'urlEpisode': episode['url'],
-			'name': episode['name']
+			'name': episode['name'],
+			'iswatched': 'false'
 		}
+		if infoLabels['playcount'] > 0:
+			params['iswatched'] = 'true'
 		url = _baseUrl+'?' + urllib.urlencode(params)								
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
 		
@@ -145,6 +148,10 @@ def handlerPlayEpisode():
 		import subprocess
 		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		stdout, stderr = p.communicate()
+		if _params['iswatched'] == 'false':
+			watchlog.setWatched(_watchlogPath, _baseUrl, _params['name'])
+			flagSet('refreshEpisodes')
+			xbmc.executebuiltin("Container.Refresh()")
 #		xbmcgui.Dialog().ok('Finished', stdout, stderr)
 	else:
 		item=xbmcgui.ListItem(_params['name'])
