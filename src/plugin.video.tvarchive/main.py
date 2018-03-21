@@ -1,4 +1,3 @@
-# coding: utf-8
 
 import sys
 import urlparse
@@ -22,6 +21,8 @@ _path = _addon.getAddonInfo('path')
 _playlistFile = _addon.getSetting('playlistFile')
 _iconsFolder = _addon.getSetting('iconsFolder')
 _watchlogPath = _addon.getSetting('watchlogFolder') +  '/watchlog.db'
+_forceMxPlayer = _addon.getSetting('forceMxPlayer')
+
 
 reload(sys)
 sys.setdefaultencoding("utf-8")	
@@ -122,7 +123,8 @@ def handlerListEpisodes():
 		params = {
 			'handler': 'PlayEpisode',
 			'archive': _params['archive'],
-			'urlEpisode': episode['url']
+			'urlEpisode': episode['url'],
+			'name': episode['name']
 		}
 		url = _baseUrl+'?' + urllib.urlencode(params)								
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
@@ -133,10 +135,23 @@ def handlerListEpisodes():
 def handlerPlayEpisode():		
 	handler = getattr(__import__(_params['archive']), 'getStream' )	
 	stream = handler(_params['urlEpisode'])
-	item=xbmcgui.ListItem()
-	item.setPath(stream)
-#	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)		
-	xbmc.Player().play(stream,item)
+	if _forceMxPlayer =='true':
+		cmd=[
+			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',stream,
+			'--es','title',unicode(_params['name']),
+#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+			'--activity-clear-task','--user','0'
+		]
+		import subprocess
+		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		stdout, stderr = p.communicate()
+#		xbmcgui.Dialog().ok('Finished', stdout, stderr)
+	else:
+		item=xbmcgui.ListItem(_params['name'])
+		item.setPath(stream)
+		xbmc.Player().play(stream,item)	
+
+	
 
 
 def listChannels(channels):

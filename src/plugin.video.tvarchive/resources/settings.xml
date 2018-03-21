@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
     <category label="32000">
-		<setting id="playlistFile" type="file" label="32005" />    
-		<setting id="iconsFolder" type="folder" label="32003" />     	
-		<setting id="watchlogFolder" type="folder" label="32004" />     	
+		<setting id="playlistFile" type="file" label="32010" />    
+		<setting id="iconsFolder" type="folder" label="32011" />     	
+		<setting id="watchlogFolder" type="folder" label="32012" />
+		<setting id="forceMxPlayer" type="bool" label="32013" default="false" />    	
     </category>
 </settings>

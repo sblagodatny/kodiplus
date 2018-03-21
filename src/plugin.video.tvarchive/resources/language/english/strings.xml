@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <strings>
 	<string id="32000">General</string>
-	<string id="32003">Icons Folder</string>
-	<string id="32004">Watchlog DB Folder</string>
-	<string id="32005">Playlist File</string>
+	<string id="32010">Playlist File</string>
+	<string id="32011">Icons Folder</string>
+	<string id="32012">Watchlog DB Folder</string>
+	<string id="32013">Force MXPlayer</string>
+	
 </strings>
