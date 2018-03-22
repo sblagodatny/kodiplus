@@ -23,7 +23,7 @@ def getMyVideos(session):
 	dummy, i = util.substr ('"VIDEO_LIST_DISPLAY_OBJECT"',':',content)	
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
-		soup = BeautifulSoup(util.unescape(item['html'].decode('unicode_escape')), "html.parser")	
+		soup = BeautifulSoup(util.unescape(item['html'].decode('utf-8')), "html.parser")	
 		ptag = soup.find(class_="vm-video-indicators")
 		privacy = 'Public'				
 		if not ptag.find(class_='vm-unlisted').parent.has_attr('aria-hidden'):
@@ -154,37 +154,6 @@ def searchPlaylists(searchStr, session):
 		})
 	return (result)
 		
-		
-		
-		
-def getVideoInfo(session, id, player):		
-	headers = {
-		'Host': 'www.youtube.com',
-		'Connection': 'keep-alive',
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36',
-		'Accept': '*/*',
-		'DNT': '1',
-		'Referer': 'https://www.youtube.com/tv',
-		'Accept-Encoding': 'gzip, deflate',
-		'Accept-Language': 'en-US,en;q=0.8,de;q=0.6'
-	}
-	args = player.get("args", {})
-	params = {'video_id': id,
-		'eurl': 'https://youtube.googleapis.com/v/' + id,
-		'ssl_stream': '1',
-		'el': 'default',
-		'html5': '1',
-		'sts': player.get('sts', ''),
-		'c': args.get('c', 'WEB'),
-		'cver': args.get('cver', '1.20170712'),
-		'cplayer': args.get('cplayer', 'UNIPLAYER'),
-		'cbr': args.get('cbr', 'Chrome'),
-		'cbrver': args.get('cbrver', '53.0.2785.143'),
-		'cos': args.get('cos', 'Windows'),
-		'cosver': args.get('cosver', '10.0')
-	}	
-	data = session.get( 'http://www.youtube.com/get_video_info', params=params, headers=headers).text		
-	return (dict(urlparse.parse_qsl(data)))
 
 	
 def getPlayer(session, id):
@@ -217,28 +186,5 @@ def getStreams(id, session):
 				url = url + '&signature=' + cipher([stream['s']])
 			streams.update({stream['itag']: url})
 	return streams
-		
-#	data = player.get("args", {}).get("hlsvp","")
-#	if len(data) > 5:	
-#		data = session.get(urllib.unquote(data)).text.splitlines()
-#		for i in range (len(data)):
-#			if data[i].startswith('http'):
-#				itag, dummy = util.substr("itag/","/",data[i])
-#				streams.update({itag: data[i]})		
-#		return streams
-#	return streams
-	
-	
-def getDash(id, session):	
-	player = getPlayer(session, id)
-	cipher = getCipher(session, player)
-	info = getVideoInfo(session, id, player)
-	dash = urllib.unquote(info.get('dashmpd', ''))
-	if '/signature/' not in dash and '/s/' in dash:
-		s, i = util.substr('/s/','/',dash)
-		signature = cipher([s])
-		dash = dash.replace('/s/' + s, '/signature/' + signature)
-#	if info.get('live_playback', '0') == '1':
-#		dash += '&start_seq=$START_NUMBER$'
-	return (dash)
+
 	

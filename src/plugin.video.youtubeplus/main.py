@@ -25,6 +25,10 @@ _path = _addon.getAddonInfo('icon').replace('icon.png','')
 _useDash=_addon.getSetting('useDash')
 _cookiesFolder = _addon.getSetting('cookiesFolder')
 
+
+reload(sys)
+sys.setdefaultencoding("utf-8")	
+
 	
 def listPlaylists(content):
 	for data in content:			
@@ -112,21 +116,14 @@ def handlerPlay():
 	item=xbmcgui.ListItem()
 	cookies = s.cookies.get_dict(domain='.youtube.com')
 	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}	
-	if _params['privacy'] == 'Public' and _params['live'] == 'False' and _useDash=='true':
-		dash = youtube.getDash(_params['id'], s)	
-		item.setPath(dash )
-		item.setProperty('inputstreamaddon', 'inputstream.adaptive')
-		item.setProperty('inputstream.adaptive.manifest_type', 'mpd')
-	else:
-		streams = youtube.getStreams(_params['id'], s)
-		itag = util.firstMatch(youtube.itagsVod, streams.keys())
+	streams = youtube.getStreams(_params['id'], s)
+	itag = util.firstMatch(youtube.itagsVod, streams.keys())
+	if itag is None:
+		itag = util.firstMatch(youtube.itagsLive, streams.keys())
 		if itag is None:
-			itag = util.firstMatch(youtube.itagsLive, streams.keys())
-			if itag is None:
-				xbmcgui.Dialog().ok('Error', 'Unable to get stream')
-				return			
-		item.setPath(streams[itag] + '|' + urllib.urlencode(headers))
-	
+			xbmcgui.Dialog().ok('Error', 'Unable to get stream')
+			return			
+	item.setPath(streams[itag] + '|' + urllib.urlencode(headers))
 	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)			
 
 	
