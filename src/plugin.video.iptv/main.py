@@ -100,13 +100,14 @@ def getKeshetStream():
 	
 	
 def handlerPlay():
-
 	if _params['name'] == 'קשת':
-		_params['url'] = getKeshetStream()
-		
-	util.play(_params['url'],_params['name'])
-#	item = xbmcgui.ListItem(_params['name'])
-#	xbmc.Player().play(_params['url'], item)
+		_params['url'] = getKeshetStream()		
+	if _params['name'] == 'קשת' or _params['name'] == 'רשת':
+		item = xbmcgui.ListItem(_params['name'])
+		xbmc.Player().play(_params['url'], item)
+	else:
+		util.play(_params['url'],_params['name'])
+	
 
 def getEPG():
 	if os.path.isfile(_path + '/epg'):
