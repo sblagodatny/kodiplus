@@ -4,6 +4,5 @@
 		<setting id="playlistFile" type="file" label="32005" />    
 		<setting id="epgFile" type="file" label="32002" />
 		<setting id="iconsFolder" type="folder" label="32003" />
-		<setting id="forceMxPlayer" type="bool" label="32004" default="false" />	
     </category>
 </settings>

@@ -5,6 +5,10 @@ import time
 import datetime
 import xbmcvfs
 from bs4 import BeautifulSoup
+import xbmcgui
+import xbmc
+
+
 
 
 
@@ -103,7 +107,8 @@ def fileToObj(path):
 	with open(path, 'rb') as input:
 		obj = pickle.load(input)
 	return obj
-		
+	
+
 def fileName(path):
 	if '/' in path:
 		return path.split('/')[-1]
@@ -260,8 +265,8 @@ def m3uChannels(m3uFile):
 			channels.append(channel)
 	f.close()
 	return channels
-	
-	
+
+
 def xmltvGetCurrent(epg, tvg_id, tvg_shift):
 	n = now()
 	if tvg_shift is not None:	
@@ -291,3 +296,27 @@ def xmltvParse(epgFile):
 			'stop':stop 
 		})
 	return epg
+
+		
+		
+### External Player ###
+def play(url, title):
+	if xbmc.getCondVisibility('system.platform.android'):
+		cmd=[
+			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,
+			'--es','title',unicode(title),
+#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+			'--activity-clear-task','--user','0'
+		]
+	elif xbmc.getCondVisibility("system.platform.windows"):
+		cmd=[
+			'C:/Program Files/VideoLAN/VLC/vlc.exe','--meta-title=' + unicode(title), url
+		]
+	else:
+		xbmcgui.Dialog().ok('Error', 'Unsupported OS')
+		return
+	import subprocess
+	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	stdout, stderr = p.communicate()
+#	xbmcgui.Dialog().ok('Player', stdout, stderr)
+

@@ -24,8 +24,9 @@ _path = _addon.getAddonInfo('icon').replace('icon.png','')
 _epgFile = _addon.getSetting('epgFile')
 _playlistFile = _addon.getSetting('playlistFile')
 _iconsFolder = _addon.getSetting('iconsFolder')
-_forceMxPlayer = _addon.getSetting('forceMxPlayer')
 	
+reload(sys)
+sys.setdefaultencoding("utf-8")	
 	
 	
 	
@@ -75,21 +76,8 @@ def listChannels(channels, epg):
 	
 	
 def handlerPlay():		
-	if _forceMxPlayer =='true':
-		cmd=[
-			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',_params['url'],
-			'--es','title',_params['name'],
-#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
-			'--activity-clear-task','--user','0'
-		]
-		import subprocess
-		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		stdout, stderr = p.communicate()
-#		xbmcgui.Dialog().ok('Finished', stdout, stderr)
-	else:
-		item=xbmcgui.ListItem(_params['name'])
-		item.setPath(_params['url'])
-		xbmc.Player().play(_params['url'],item)
+	util.play(_params['url'],_params['name'])
+
 
 def getEPG():
 	if os.path.isfile(_path + '/epg'):
