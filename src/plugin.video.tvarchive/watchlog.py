@@ -11,7 +11,7 @@ def init(dbfile,initfile):
 def isWatched(dbfile, addon, item):
 	db = sqlite.connect(dbfile)
 	try:
-		result = db.execute("SELECT item FROM watchlog WHERE addon = ? AND item = ?",(addon,item)).fetchone()		
+		result = db.execute("SELECT item FROM watchlog WHERE addon = ? AND item = ?",(addon,unicode(item))).fetchone()		
 		db.close() 
 		if result is None:
 			return False
