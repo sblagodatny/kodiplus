@@ -63,8 +63,8 @@ def getEpisodes(urlProgram):
 				})
 			if not data['has_next']:
 				break						
-		if not data['has_next']:
-				break
+#		if not data['has_next']:
+#				break
 	return result	
 
 
