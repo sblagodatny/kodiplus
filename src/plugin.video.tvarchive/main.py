@@ -125,7 +125,8 @@ def handlerPlayEpisode():
 		f.write("1") 
 	watchlog.setWatched(_watchlogPath, _baseUrl, _params['name'])
 	util.play(stream, _params['name'])
-
+	if os.path.isfile(_episodesRefreshFlag):
+		xbmc.executebuiltin("Container.Refresh()")
 
 	
 def listChannels(channels):
