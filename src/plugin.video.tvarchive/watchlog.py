@@ -25,6 +25,8 @@ def isWatched(dbfile, addon, item):
 		raise
 		
 def setWatched(dbfile, addon, item):
+	if isWatched(dbfile, addon, item):
+		return
 	db = sqlite.connect(dbfile)
 	try:
 		result = db.execute("INSERT INTO watchlog (addon,item) VALUES (?,?)",(addon,unicode(item)))		
