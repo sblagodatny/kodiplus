@@ -44,7 +44,6 @@ def getEpisodes(urlProgram):
 	s = requests.Session()
 	s.verify = False
 	url = urlProgram.replace('rutube.ru/','rutube.ru/api/') + '/video'
-#	seasonExists = True
 	for season in range(1,20):
 		for page in range(1,10):
 			params = {
@@ -54,8 +53,6 @@ def getEpisodes(urlProgram):
 				'page': page
 			}
 			data = json.loads(s.get(url=url, params=params).text)
-#			if page == 1 and len(data['results']) == 0:
-#				seasonExists = False
 			for video in data['results']:
 				result.append({
 					'url': video['id'],
@@ -66,8 +63,8 @@ def getEpisodes(urlProgram):
 				})
 			if not data['has_next']:
 				break						
-#		if not seasonExists:
-#			break
+		if not data['has_next']:
+				break
 	return result	
 
 

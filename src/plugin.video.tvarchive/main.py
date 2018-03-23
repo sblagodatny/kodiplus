@@ -1,3 +1,4 @@
+# coding: utf-8
 
 import sys
 import urlparse
@@ -21,8 +22,8 @@ _path = _addon.getAddonInfo('path')
 _playlistFile = _addon.getSetting('playlistFile')
 _iconsFolder = _addon.getSetting('iconsFolder')
 _watchlogPath = _addon.getSetting('watchlogFolder') +  '/watchlog.db'
-_forceMxPlayer = _addon.getSetting('forceMxPlayer')
 
+_episodesRefreshFlag = _path + '/refreshEpisodes'
 
 reload(sys)
 sys.setdefaultencoding("utf-8")	
@@ -69,32 +70,17 @@ def handlerWatched():
 		watchlog.setWatched(_watchlogPath, _baseUrl, _params['item'])
 	else:
 		watchlog.setUnWatched(_watchlogPath,_baseUrl, _params['item'])
-	flagSet('refreshEpisodes')
+	with open(_episodesRefreshFlag,'w') as f:
+		f.write("1") 
 	xbmc.executebuiltin("Container.Refresh()")
 
-	
-def flagSet(flag):
-	if flagIsSet(flag):
-		return
-	f = open(_path + '/' + flag,'w') 
-	f.write("1")
-	f.close()
-
-def flagUnSet(flag):
-	os.remove(_path + '/' + flag)
-
-def flagIsSet(flag):
-	if os.path.isfile(_path + '/' + flag):
-		return True
-	else:
-		return False
 	
 	
 def handlerListEpisodes():	
 	xbmcplugin.setContent(_handleId, 'movies')
 	watchlog.init(_watchlogPath,_path + '/watchlog.db')
-	if flagIsSet('refreshEpisodes'):
-		flagUnSet('refreshEpisodes')
+	if os.path.isfile(_episodesRefreshFlag):
+		os.remove(_episodesRefreshFlag)
 		episodes = util.fileToObj(_path + '/' + 'content')
 	else:
 		handler = getattr(__import__(_params['archive']), 'getEpisodes' )	
@@ -123,12 +109,9 @@ def handlerListEpisodes():
 		params = {
 			'handler': 'PlayEpisode',
 			'archive': _params['archive'],
-			'urlEpisode': episode['url'],
-			'name': episode['name'],
-			'iswatched': 'false'
+			'url': episode['url'],
+			'name': episode['name']
 		}
-		if infoLabels['playcount'] > 0:
-			params['iswatched'] = 'true'
 		url = _baseUrl+'?' + urllib.urlencode(params)								
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
 		
@@ -137,30 +120,14 @@ def handlerListEpisodes():
 	
 def handlerPlayEpisode():		
 	handler = getattr(__import__(_params['archive']), 'getStream' )	
-	stream = handler(_params['urlEpisode'])
-	if _forceMxPlayer =='true':
-		cmd=[
-			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',stream,
-			'--es','title',unicode(_params['name']),
-#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
-			'--activity-clear-task','--user','0'
-		]
-		import subprocess
-		p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		stdout, stderr = p.communicate()
-		if _params['iswatched'] == 'false':
-			watchlog.setWatched(_watchlogPath, _baseUrl, _params['name'])
-			flagSet('refreshEpisodes')
-			xbmc.executebuiltin("Container.Refresh()")
-#		xbmcgui.Dialog().ok('Finished', stdout, stderr)
-	else:
-		item=xbmcgui.ListItem(_params['name'])
-		item.setPath(stream)
-		xbmc.Player().play(stream,item)	
+	stream = handler(_params['url'])
+	with open(_episodesRefreshFlag,'w') as f:
+		f.write("1") 
+	watchlog.setWatched(_watchlogPath, _baseUrl, _params['name'])
+	util.play(stream, _params['name'])
+
 
 	
-
-
 def listChannels(channels):
 #	xbmcplugin.setContent(_handleId, 'movies')
 	for channel in channels:	
