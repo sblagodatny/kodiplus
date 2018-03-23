@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.iptv'
-version = '1.7'
+addon = 'plugin.video.tvarchive'
+version = '1.16'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
