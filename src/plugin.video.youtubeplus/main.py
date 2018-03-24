@@ -31,11 +31,13 @@ sys.setdefaultencoding("utf-8")
 
 	
 def listPlaylists(content):
+	xbmcplugin.setContent(_handleId, 'movies')
 	for data in content:			
 		name = data["name"] + ' [' + str (data["count"]) + ']'
 		if data['privacy']=='Private':
 			name = util.color(name,'orange') 
-		item = xbmcgui.ListItem(name, iconImage=data["thumb"] )
+		item = xbmcgui.ListItem(name)
+		item.setArt({'thumb': data["thumb"], 'poster': data["thumb"], 'fanart': data["thumb"]})
 		item.setProperty("IsPlayable","false")	
 		params = {
 			'handler': 'PlaylistVideos',
@@ -45,6 +47,7 @@ def listPlaylists(content):
 
 
 def listVideos(content):
+	xbmcplugin.setContent(_handleId, 'movies')
 	for data in content:
 		infoLabels = { 			
 			"duration": data["duration"],
@@ -63,10 +66,9 @@ def listVideos(content):
 		params = {
 			'handler': 'Play',
 			'id': data['id'],
-			'privacy': data['privacy'],
-			'live': live
+			'name': data['name']
 		}		
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=False, listitem=item)
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
 	
 	
 def handlerSearchPlaylists():
@@ -113,18 +115,17 @@ def handlerSavedPlaylists():
 	
 def handlerPlay():	
 	s = util.Session(_cookiesFolder)
-	item=xbmcgui.ListItem()
-	cookies = s.cookies.get_dict(domain='.youtube.com')
-	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}	
 	streams = youtube.getStreams(_params['id'], s)
-	itag = util.firstMatch(youtube.itagsVod, streams.keys())
+	itag = util.firstMatch(youtube.itagsVideo, streams.keys())
 	if itag is None:
 		itag = util.firstMatch(youtube.itagsLive, streams.keys())
 		if itag is None:
 			xbmcgui.Dialog().ok('Error', 'Unable to get stream')
 			return			
-	item.setPath(streams[itag] + '|' + urllib.urlencode(headers))
-	xbmcplugin.setResolvedUrl(_handleId, True, listitem=item)			
+	url = streams[itag]
+	cookies = s.cookies.get_dict(domain='.youtube.com')
+	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}	
+	util.play(url, _params['name'], headers)	
 
 	
 def handlerSearch():
@@ -146,12 +147,18 @@ def handlerSearch():
 def handlerRoot():
 	
 	### Build base list ###
-	pathImg = _path + '/resources/img/'
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'MyVideos'}), isFolder=True, listitem=xbmcgui.ListItem('My Videos', iconImage=pathImg+'myVideos.png'))
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'MyPlaylists'}), isFolder=True, listitem=xbmcgui.ListItem('My Playlists', iconImage=pathImg+'myPlaylists.png'))
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'SavedPlaylists'}), isFolder=True, listitem=xbmcgui.ListItem('Saved Playlists', iconImage=pathImg+'savedPlaylists.png'))
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'Search', 'handlerRedirect': 'SearchVideos'}), isFolder=True, listitem=xbmcgui.ListItem('Search Videos', iconImage=pathImg+'searchVideos.png'))
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode({'handler': 'Search', 'handlerRedirect': 'SearchPlaylists'}), isFolder=True, listitem=xbmcgui.ListItem('Search Playlists', iconImage=pathImg+'searchPlaylists.png'))
+	items = [
+		{'name': 'My Videos', 'params': {'handler': 'MyVideos'}, 'thumb': 'myVideos.png'},
+		{'name': 'My Playlists', 'params': {'handler': 'MyPlaylists'}, 'thumb': 'myPlaylists.png'},
+		{'name': 'Saved Playlists', 'params': {'handler': 'SavedPlaylists'}, 'thumb': 'savedPlaylists.png'},
+		{'name': 'Search Videos', 'params': {'handler': 'Search', 'handlerRedirect': 'SearchVideos'}, 'thumb': 'searchVideos.png'},
+		{'name': 'Search Playlists', 'params': {'handler': 'Search', 'handlerRedirect': 'SearchPlaylists'}, 'thumb': 'searchPlaylists.png'},
+	]
+	for item in items:
+		li = xbmcgui.ListItem(item['name'])
+		img = _path + '/resources/img/' + item["thumb"]
+		li.setArt({'thumb': img, 'poster': img})
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(item['params']), isFolder=True, listitem=li)
 	xbmcplugin.endOfDirectory(_handleId)
 
 	

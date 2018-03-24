@@ -5,6 +5,8 @@ import time
 import datetime
 import xbmcvfs
 from bs4 import BeautifulSoup
+import xbmcgui
+import xbmc
 
 
 
@@ -98,19 +100,14 @@ def bold(str):
 	
 ### File utilities ###	
 def objToFile(obj, path):
-	output = xbmcvfs.File (path, 'w')
-	pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
-	output.close()
+	with open(path, 'wb') as output:
+		pickle.dump(obj, output, protocol=pickle.HIGHEST_PROTOCOL)
 	
 def fileToObj(path):
-	input = xbmcvfs.File (path, 'r')
-	try:
-		obj = pickle.loads(input.read())
-	except:
-		input.close()
-		return None
-	input.close()
+	with open(path, 'rb') as input:
+		obj = pickle.load(input)
 	return obj
+	
 
 def fileName(path):
 	if '/' in path:
@@ -177,6 +174,7 @@ class Session (requests.Session):
 			'User-Agent': self._userAgent,
 		})
 		self.cookiesFolder = cookiesFolder
+		self.xbmc = xbmc
 		cookies = self.cookies
 		self.cookies = fileToObj(cookiesFolder + '/cookies')
 		if self.cookies is None:
@@ -221,7 +219,7 @@ def urlencode(params):
 class timezone(datetime.tzinfo):
 	_offset = None
 	_dst = None
-	def __init__(self, seconds):
+	def __init__(self, seconds=0):
 		self._offset = datetime.timedelta(seconds = seconds)
 		self._dst = datetime.timedelta(0)
 	def utcoffset(self, dt):
@@ -269,29 +267,63 @@ def m3uChannels(m3uFile):
 	return channels
 
 
-def xmltvCurrentPrograms(channels, epgFile):
-	tvg_shift = {}
-	for channel in channels:
-		if 'tvg_shift' in channel.keys():
-			tvg_shift.update({channel['tvg_id']: channel['tvg_shift']})
-	try:
-		epg = {}
-		f = xbmcvfs.File (epgFile, 'r')
-		data = f.read()
-		f.close()
-		data = BeautifulSoup(data, "html.parser")
-		n = now()
-		for program in data.find_all('programme'):
-			start = strToDateTime(program['start'])
-			stop = strToDateTime(program['stop'])
-			if program['channel'] in tvg_shift.keys():
-				start = start + datetime.timedelta(hours=int(tvg_shift[program['channel']]))
-				stop = stop + datetime.timedelta(hours=int(tvg_shift[program['channel']]))			
-			if n >= start and n < stop:
-				epg.update({
-					program['channel']: {'title': program.find('title').get_text(), 'description': program.find('desc').get_text(), 'remaining': stop-n}
-				})	
-		return epg
-	except:
-		raise
-		return None
+def xmltvGetCurrent(epg, tvg_id, tvg_shift):
+	n = now()
+	if tvg_shift is not None:	
+		n = n + datetime.timedelta(hours=int(tvg_shift))
+	for program in epg[tvg_id]:
+		if n >= program['start'] and n < program['stop']:
+			program.update({'remaining': program['stop']-n})
+			return program	
+	return None			
+	
+	
+def xmltvParse(epgFile):
+	epg = {}
+	f = xbmcvfs.File (epgFile, 'r')
+	data = f.read()
+	f.close()
+	data = BeautifulSoup(data, "html.parser")
+	for program in data.find_all('programme'):
+		start = strToDateTime(program['start'])
+		stop = strToDateTime(program['stop'])
+		if program['channel'] not in epg.keys():
+			epg.update({program['channel']:[]})
+		epg[program['channel']].append({
+			'title': program.find('title').get_text(), 
+			'description': program.find('desc').get_text(),
+			'start': start,
+			'stop':stop 
+		})
+	return epg
+
+		
+		
+### External Player ###
+def play(url, title, headers=None):
+	if xbmc.getCondVisibility('system.platform.android'):
+		cmd=[
+			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',
+			'--es','title',unicode(title)
+		]
+		if headers is not None:
+			headersS = ''
+			empty = True
+			for key, value in headers.iteritems():
+				headersS = headersS + key + ',' + value + ','
+				empty = False
+			if not empty:
+				headersS = headersS[:-1]
+				cmd = cmd + ['--esa', 'headers', headersS]
+	elif xbmc.getCondVisibility("system.platform.windows"):
+		cmd=[
+			'C:/Program Files/VideoLAN/VLC/vlc.exe','--meta-title=' + unicode(title), url
+		]
+	else:
+		xbmcgui.Dialog().ok('Error', 'Unsupported OS')
+		return
+	import subprocess
+	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	stdout, stderr = p.communicate()
+#	xbmcgui.Dialog().ok('Player', stdout, stderr)
+

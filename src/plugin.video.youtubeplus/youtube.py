@@ -13,8 +13,7 @@ youtubeUrl = 'https://www.youtube.com/'
 
 
 
-itagsVod = ['22','18']
-itagsLive = ['95','93']
+itagsVideo = ['22','18']
 	
 	
 def getMyVideos(session):

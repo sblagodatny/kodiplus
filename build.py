@@ -3,8 +3,8 @@ import shutil
 import hashlib
 
 
-addon = 'plugin.video.iptv'
-version = '1.10'
+addon = 'plugin.video.youtubeplus'
+version = '1.7'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
