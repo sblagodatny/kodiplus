@@ -12,6 +12,7 @@ import util
 import urllib
 import os
 import datetime
+import urllib
 
 
 
@@ -88,7 +89,7 @@ def getKeshetStream():
 		'dv': '6540b8dcb64fd310VgnVCM2000002a0c10acRCRD'
 	}
 	headers = {
-		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+		'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0',
 		'Referer': 'https://www.mako.co.il/mako-vod-live-tv/VOD-6540b8dcb64fd31006.htm'
 	}
 	s = requests.Session()
@@ -96,19 +97,31 @@ def getKeshetStream():
 	data = json.loads(s.get(url=url, params=params, headers=headers).text)
 	ticket = data['tickets'][0]['ticket']
 	url = 'https://keshethlslive-i.akamaihd.net' + plurl + '?' + ticket
-	return url
+	data = s.get(url=url, headers=headers)
+	cookies = s.cookies.get_dict()
+	headers.update({'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}),
+	url = 'https://keshethlslive-i.akamaihd.net/hls/live/512033-b/CH2LIVE_HIGH/index_2200.m3u8'	
+	return url, headers
+
+	
+def getReshetStream():
+	url = 'http://besttv10.aoslive.it.best-tv.com/reshet/studio/index_4.m3u8'
+	headers = {'Referer':'http://reshet.tv/live/'}
+	return (url, headers)
 	
 	
 def handlerPlay():
+	url = _params['url']
+	headers = None
 	if _params['name'] == 'קשת':
-		_params['url'] = getKeshetStream()		
-	if _params['name'] == 'קשת' or _params['name'] == 'רשת':
-		item = xbmcgui.ListItem(_params['name'])
-		xbmc.Player().play(_params['url'], item)
-	else:
-		util.play(_params['url'],_params['name'])
-	
-
+		url, headers = getKeshetStream()
+	if _params['name'] == 'רשת':
+		url, headers = getReshetStream()
+	util.play(url,_params['name'],headers)
+#	item = xbmcgui.ListItem(_params['name'])
+#	xbmc.Player().play(_params['url'], item)
+		
+		
 def getEPG():
 	if os.path.isfile(_path + '/epg'):
 		mtime = datetime.datetime.fromtimestamp(os.path.getmtime(_path + '/epg'))
