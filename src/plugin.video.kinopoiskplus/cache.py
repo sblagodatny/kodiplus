@@ -1,8 +1,15 @@
 import cPickle as pickle
 from sqlite3 import dbapi2 as sqlite
 
-def get(id, file):
-	db = sqlite.connect(file)
+def init(path, pathInit):
+	import os
+	if not os.path.isfile(path + 'cache.db'):
+		import shutil
+		shutil.copyfile(pathInit + 'cache.db', path + 'cache.db')
+
+			
+def get(id, path):
+	db = sqlite.connect(path + 'cache.db')
 	result = db.execute("SELECT object FROM cache WHERE id=?",(id,)).fetchone()
 	if result is None:
 		db.close()
@@ -13,8 +20,8 @@ def get(id, file):
 	return (pickle.loads(str(result[0])))
 		
 
-def set(id, obj, file):
-	db = sqlite.connect(file)
+def set(id, obj, path):
+	db = sqlite.connect(path + 'cache.db')
 	result = db.execute("SELECT rowid FROM cache WHERE id = ?",(id,)).fetchone()
 	bobj = sqlite.Binary(pickle.dumps(obj))
 	if result is None:

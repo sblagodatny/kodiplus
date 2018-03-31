@@ -8,6 +8,9 @@ import re
 import urllib
 import time
 import sys
+import json
+import kinopoiskplus
+
 
 _genres = {
 	'Комедия': '6',
@@ -33,30 +36,41 @@ def getThumb(id):
 def getPoster(id):
 	return 'https://www.kinopoisk.ru/images/film_big/' + id + '.jpg'
 	
-def searchByTitle(session, title, contentType='Movie', years=None):
+def searchByTitle(pathCookies, title, contentType='Movie'):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	url = 'https://www.kinopoisk.ru/s/type/film'
 	url = url + '/find/' + title
-	if contentType is not None:
-		if contentType == 'serial':
-			url = url + '/m_act[type]/serial'
-	if years is not None:
-		from_year = years.split(':')[0]
-		to_year = years.split(':')[1]
-		if from_year:
-			url = url + '/m_act[from_year]/' + from_year
-		if to_year:
-			url = url + '/m_act[to_year]/' + to_year		
+	if contentType == 'serial':
+		url = url + '/m_act[type]/serial'
 	url = url + '/list/1/order/relevant/perpage/10'
 	data = BeautifulSoup(session.get(url).content, "html.parser")
 	result = []	
-	for tag in data.find_all(class_="element"):	
-		subtag = tag.find(class_="info").find('a')
-		id = subtag['data-id']		
-		result.append(id)
+	for tag in data.find_all(class_="element"):		
+		try:
+			myrating = tag.find(class_='my_vote').get_text()
+		except:
+			myrating = ''
+		try:
+			year = tag.find(class_="year").get_text()
+		except:
+			continue
+		result.append({
+			'id': tag.find(class_="info").find('a')['data-id'],
+			'name': cleanseName(tag.find(class_="name").find('a').get_text()),
+			'year': year,
+			'myrating': myrating
+		})
 	return result
 	
 	
-def searchByParams(session, contentType='Movie', hideWatched=True, hideInFolders = False, genre=None, years=None, countries=None):
+def searchByParams(pathCookies, contentType='Movie', hideWatched=True, hideInFolders = False, genre=None, years=None, countries=None):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	genreExclude = '12,1747,15,9,28,25,26,1751'
 	url = 'https://www.kinopoisk.ru/top/navigator'
 	if contentType is not None:
@@ -82,65 +96,59 @@ def searchByParams(session, contentType='Movie', hideWatched=True, hideInFolders
 	data = BeautifulSoup(session.get(url).content, "html.parser")
 	result = []
 	for tag in data.find_all(class_="item _NO_HIGHLIGHT_"):
-		id = tag['id'].replace('tr_','')
-		result.append(id)	
+		result.append({
+			'id': tag['id'].replace('tr_',''),
+			'name': cleanseName(tag.find(class_="name").find('a').get_text()),
+			'year': tag.find(class_="name").find('span').get_text().split('(')[-1].split(')')[0],
+			'myrating': tag.find(class_='myVote').find('p').get_text()
+		})
 	return (result)	
 	
-	
-def setWatched(session,id,state,vote='7'):
-	def validate(s):
-		if s.lower() != 'ok':
-			raise Exception(s)	
 			
-	data = session.get('https://www.kinopoisk.ru/film/' + id + '/').content
-	uc, dummy = util.substr("user_code:'","'",data)
-	xsrftoken, dummy = util.substr ("xsrftoken = '","'",data)
 	
+def setWatched(pathCookies,id,state,vote='7'):		
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
+	xsrftoken = kinopoiskplus.getUserDetails(session)['xsrftoken']
 	data = {
 		'token': xsrftoken,
-		'id_film': id,
-		'c': uc
+		'id_film': id
+#		'c': uc
 	}		
 	if state:
 		data.update({'act': 'add'})
 		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
 		del data['act']
 		data.update({'vote': vote})
-		validate(session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content)
+		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
 	else:
 		data.update({'act': 'kill_vote'})
 		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
 		data.update({'act': 'delete'})
-		validate(session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content)
+		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
 
 		
-def getDetails(session, id):
-	headers = session.headers
+def getDetails(pathCookies, id):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
 	session.headers.update ({
-		'Referer': 'https://www.kinopoisk.ru/'
+		'Referer': 'https://www.kinopoisk.ru/',
+		'Accept-Language': 'en-US,en;q=0.8,he;q=0.6,ru;q=0.4',
+		'Accept-Encoding': 'gzip, deflate, sdch, br',
+		'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+		'Upgrade-Insecure-Requests': '1',
+		'Connection': 'keep-alive'
 	})
-	data = BeautifulSoup(session.get('https://www.kinopoisk.ru/film/' + id + '/').content, "html.parser")
-	try:
-		name = data.find(class_='moviename-big').get_text()
-		if ' (' in name:
-			name = name.split(' (')[0]
-	except:
-		name = ''			
-	try:
-		nameOrig = data.find('span', {'itemprop':'alternativeHeadline'}).get_text()
-		if len(nameOrig ) < 2:
-			raise
-	except:
-		nameOrig = None		
-	try:
-		description = data.find(class_='film-synopsys').get_text()
-	except:
-		description = ''
-	try:
-		rating = data.find(class_='rating_ball').get_text()
-	except:
-		rating = ''	
-		
+	url = 'https://www.kinopoisk.ru/film/' + id + '/'
+	data = BeautifulSoup(session.get(url).content, "html.parser")
+	name = cleanseName(data.find(class_='moviename-big').get_text())
+	nameOrig = data.find('span', {'itemprop':'alternativeHeadline'}).get_text()
+	description = data.find(class_='film-synopsys').get_text()
+	rating = data.find(class_='rating_ball').get_text()
 	info = data.find(class_='info')
 	country = []	
 	try:
@@ -156,61 +164,29 @@ def getDetails(session, id):
 			genre.append(genreTag.get_text())
 	except:
 		None
-
-	try:
-		year = int(info.find(text='год').find_next().find('a').get_text())
-	except:
-		year = 0	
-		
-	seasons = None
-	seasonsFinal = True
-	try:
-		t = data.find(class_='moviename-big').find('span').prettify()
-		if 'сериал' in t or 'мини-сериал' in t:
-			seasons = 1
-		if '...' in t:
-			seasonsFinal = False
-	except:
-		None		
-	if seasons != 0:
-		try:
-			seasons = int(info.find(text='год').find_next().find(class_='all').get_text().split(' ')[0].replace('(',''))		
-		except:
-			None
-
-	
+	year = info.find(text='год').find_next().find('a').get_text()
 	myrating, dummy = util.substr('myVote:',',',str(data))
-	
-#	assignedFolders = []
-#	try:
-#		data = str(data)
-#		dummy, i = util.substr ('myMoviesData','= ',data)
-#		data = json.loads(util.parseBrackets(data, i, ['{','}']))
-#		for dummy,folders in data['objFolders'].items():
-#			for folder in folders:
-#				assignedFolders.append(folder)
-#			break
-#	except:
-#		None
-		
+	if myrating is None:
+		myrating = ''
 	result = {
 		'description': description,
 		'rating' : rating,
+		'myrating': myrating,
 		'country': country,
 		'year': year,
 		'genre': genre,
 		'name': name,
+		'nameOrig': nameOrig,
 		'directors': getCast(session, id, 'director'),
 		'actors': getCast(session, id, 'actor')
 	}
-	if seasons is not None:
-		result.update({'seasons': seasons, 'seasonsFinal': seasonsFinal})
-	if myrating is not None:	
-		result.update({'myrating': myrating})
-	if nameOrig is not None:
-		result.update({'nameOrig': nameOrig})
-	
-	session.headers = headers
+	if isSeries(name):
+		seasons = 1
+		try:
+			seasons = int(info.find(text='год').find_next().find(class_='all').get_text().split(' ')[0].replace('(',''))		
+		except:
+			None
+		result['seasons'] = seasons
 	return result
 	
 	
@@ -227,34 +203,39 @@ def getCast(session, id, role):
 	
 	
 	
-def assignToFolder(session,id, folder,state):
-	def validate(s):
-		if 'ok' not in s.lower():
-			raise Exception(s)	
-	
-	data = session.get('https://www.kinopoisk.ru/film/' + id + '/').content
-	xsrftoken, dummy = util.substr ("xsrftoken = '","'",data)
-	
-	data = {
-		'token': xsrftoken,
-		'id_film': id,
-	}		
-	headers = session.headers
+def manageFolders(pathCookies,id,folders):	
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
 	session.headers.update({
 		'Accept': 'application/json, text/javascript, */*; q=0.01',
 		'X-Requested-With': 'XMLHttpRequest'
 	})
-	if state:
-		data.update({'mode': 'add_film', 'to_folder': folder})
-		validate(session.get("https://www.kinopoisk.ru/handler_mustsee_ajax.php" + '?' + urllib.urlencode(data)).content)
-		
-	else:
-		data.update({'mode': 'del_film', 'from_folder': folder})
-		validate(session.get("https://www.kinopoisk.ru/handler_mustsee_ajax.php" + '?' + urllib.urlencode(data)).content)
-	session.headers = headers
+	xsrftoken = kinopoiskplus.getUserDetails(session)['xsrftoken']
+	for folder in folders:
+		if folder['assigned']:
+			data = {
+				'token': xsrftoken,
+				'id_film': id,
+				'mode': 'add_film', 
+				'to_folder': folder['id']
+			}
+		else:
+			data = {
+				'token': xsrftoken,
+				'id_film': id,
+				'mode': 'del_film', 
+				'from_folder': folder['id']
+			}
+		session.get("https://www.kinopoisk.ru/handler_mustsee_ajax.php" + '?' + urllib.urlencode(data)).content
 	
-def getFolders(session):
-	headers = session.headers
+	
+def getFolders(pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
 	session.headers.update ({
 		'Referer': 'https://www.kinopoisk.ru/mykp/edit_main/'
 	})
@@ -269,20 +250,60 @@ def getFolders(session):
 		if ' (' in name:
 			name = name.split(' (')[0]
 		result.update({id: name})		
-	session.headers = headers
 	return result
 	
 	
-def getFolderContent(session, folder):
-	headers = session.headers
+def getItemFolders(pathCookies, id):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
+	session.headers.update ({
+		'Referer': 'https://www.kinopoisk.ru/'
+	})
+	data = session.get('https://www.kinopoisk.ru/film/' + id + '/').content
+	data, dummy = util.substr ("var myMoviesData = ",";",data)
+	data = json.loads(data)	
+	objfolders = data['objFolders'].values()[0].keys()
+	result = []
+	for folder in data['folders']:
+		result.append({
+			'id': folder['id'],
+			'name': folder['name'],
+			'assigned': folder['id'] in objfolders
+		})
+	return result	
+	
+	
+def getFolderContent(pathCookies, folder):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
 	session.headers.update ({
 		'Referer': 'https://www.kinopoisk.ru/mykp/movies/'
 	})
 	data = BeautifulSoup(session.get('https://www.kinopoisk.ru/mykp/movies/list/type/' + folder + '/').content, "html.parser").find('ul',{'id': 'itemList'})
 	result = []
 	for tag in data.find_all('li'):	
-		id = tag['data-id']
-		result.append(id)		
-	session.headers = headers
+		result.append({
+			'id': tag['data-id'],
+			'name': cleanseName(tag.find(class_='name').get_text()),
+			'year': tag.find(class_='info').find('span').get_text().split('(')[-1].split(')')[0],
+			'myrating': tag.find(class_='vote_widget').find_next().get_text().split("rating: '")[1].split("'")[0]
+		})		
 	return result
 	
+	
+def isSeries(name):
+	if '(сериал' in name:
+		return True
+	return False
+	
+	
+def cleanseName(name):
+	result = name
+	result = result.replace(' (видео)','')
+	result = result.replace(' (ТВ)','')
+	result = result.replace('(мини-сериал','(сериал')
+	return result

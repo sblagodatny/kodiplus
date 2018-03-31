@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <strings>
 
-	<string id="32000">Cookies</string>
-	<string id="32001">Cache</string>
-	<string id="32002">Kinopoisk</string>
-	<string id="32003">Rutracker</string>
-	<string id="32004">Transmission</string>
-	
-	<string id="32010">User</string>
-	<string id="32011">Password</string>
-	<string id="32012">URL</string>
-	<string id="32013">Folder</string>
-	<string id="32014">Age</string>
-
+	<string id="32000">General</string>
+	<string id="32001">Credentials</string>
+	<string id="32010">Cookies Folder</string>
+	<string id="32011">Cache Folder</string>
+	<string id="32012">Watched Folder</string>
+	<string id="32013">Kinopoisk User</string>
+	<string id="32014">Kinopoisk Password</string>
+	<string id="32015">RuTracker User</string>
+	<string id="32016">RuTracker Password</string>
+	<string id="32017">Transmission URL</string>
+	<string id="32018">Transmission Downloads Folder</string>
 	
 	
 </strings>

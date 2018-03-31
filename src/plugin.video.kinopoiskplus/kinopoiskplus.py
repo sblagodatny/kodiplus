@@ -8,8 +8,7 @@ import re
 import urllib
 import time
 import sys
-
-
+	
 
 def getXCSRF(session):
 	data = BeautifulSoup(session.get('https://plus.kinopoisk.ru/').content, "html.parser")
@@ -18,11 +17,13 @@ def getXCSRF(session):
 		raise Exception('Robot protection')
 	csrf = json.loads(data)['page']['csrf']	
 	return csrf
-	
 
-def login(session, user, password):					
-	data={'login': user, 'password': password}
-	headers = session.headers
+	
+def login(pathCookies, user, password):					
+	session = requests.Session()
+	session.verify = False
+	util.setUserAgent(session, 'chrome')
+	reply = session.get('https://www.kinopoisk.ru/').content	
 	xcsrf = getXCSRF(session)
 	session.headers.update({
 		'X-CSRF-Token': xcsrf,
@@ -31,40 +32,33 @@ def login(session, user, password):
 		'Origin': 'https://plus.kinopoisk.ru',
 		'X-Requested-With': 'XMLHttpRequest'
 	})	
-	session.headers = headers
-	reply = json.loads(session.post("https://plus.kinopoisk.ru/user/resolve-by-password", data=data, headers=headers).content)
+	data={'login': user, 'password': password}
+	reply = json.loads(session.post("https://plus.kinopoisk.ru/user/resolve-by-password", data=data).content)
 	if reply['status'] != 'ok':
 		raise Exception('Invalid credentials')					
-	args = {
-			'domain': 'www.kinopoisk.com',
-			'expires': None,
-			'path': '/',
-			'version':0
-		}
-	loginInfo = {
-		'user': user,
-		'xcsrf': xcsrf
-	}
-	session.cookies.set(name='MyLoginInfo',value=util.urlencode(loginInfo), **args)
-	session.saveCookies()
+	reply = session.get('https://www.kinopoisk.ru/').content
+	xsrftoken, dummy = util.substr ("xsrftoken = '","'",reply)
+	util.setCookie(session, 'www.kinopoisk.com', 'MyLoginInfo', user + '&' + str(time.time()) + '&' + xsrftoken)
+	util.saveCookies(session, pathCookies)
+	
+
+def getUserDetails(session):	
+	try:
+		loginInfo = session.cookies._find(name='MyLoginInfo', domain='www.kinopoisk.com').split('&')
+		return ({
+			'user': loginInfo[0],
+			'ts': float(loginInfo[1]),
+			'xsrftoken': loginInfo[2]
+		})
+	except:
+		return None	
 		
 
-def loginDetails(session):	
-	try:
-		loginInfo = session.cookies._find(name='MyLoginInfo', domain='www.kinopoisk.com')
-		return (util.urldecode(loginInfo))
-	except:
-		return None
-	
-	
-def loginVerify (session, user, password):
-	loginInfo = loginDetails(session)
-	if loginInfo is not None:
-		if loginInfo['user'] == user:
-			return
-	login(session,user,password)		
+
+
 
 	
+		
 def getDetails(session, id):
 	headers = session.headers
 	session.headers.update({'Referrer': 'https://plus.kinopoisk.ru/search/'})	
