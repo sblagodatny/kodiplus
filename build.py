@@ -8,7 +8,7 @@ import sys
 
 
 addon = 'plugin.video.kinopoiskplus'
-version = '1.6'
+version = '1.7'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

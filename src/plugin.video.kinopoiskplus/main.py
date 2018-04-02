@@ -33,7 +33,7 @@ _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('path') + '/'
 
 
-_cookiesFolder = _addon.getSetting('cookiesFolder')
+_dataFolder = _addon.getSetting('dataFolder')
 _kinopoiskUser = _addon.getSetting('kinopoiskUser')
 _kinopoiskPassword = _addon.getSetting('kinopoiskPassword')
 _rutrackerUser = _addon.getSetting('rutrackerUser')
@@ -43,8 +43,8 @@ _transmissionDownloadsFolder = _addon.getSetting('transmissionDownloadsFolder')
 _cacheFolder = _addon.getSetting('cacheFolder')
 _watchedFolder = _addon.getSetting('watchedFolder')
 
-_cookiesKinopoisk = _cookiesFolder + '/cookiesKinopoisk'
-_cookiesRutracker = _cookiesFolder + '/cookiesRutracker'
+_cookiesKinopoisk = _dataFolder + '/cookiesKinopoisk'
+_cookiesRutracker = _dataFolder + '/cookiesRutracker'
 
 _refreshFlag = _path + '/refresh'
 
@@ -54,7 +54,7 @@ sys.setdefaultencoding('utf8')
 
 
 def validateSettings():
-	if len(_cookiesFolder)==0 or len(_kinopoiskUser)==0 or len(_kinopoiskPassword)==0 or len(_rutrackerUser)==0 or len(_rutrackerPassword)==0 or len(_transmissionUrl)==0 or len(_transmissionDownloadsFolder)==0 or len(_cacheFolder)==0 or len(_watchedFolder)==0: 
+	if len(_dataFolder)==0 or len(_kinopoiskUser)==0 or len(_kinopoiskPassword)==0 or len(_rutrackerUser)==0 or len(_rutrackerPassword)==0 or len(_transmissionUrl)==0 or len(_transmissionDownloadsFolder)==0 or len(_cacheFolder)==0 or len(_watchedFolder)==0: 
 		xbmcgui.Dialog().ok('Error', 'Please configure settings')
 		return False
 	return True
@@ -131,37 +131,27 @@ def handlerListFolders():
 def handlerListFolder():
 	content = kinopoisk.getFolderContent(_cookiesKinopoisk, _params['folder'])
 	listContent(content)
-	
-	
-
-	
 
 
-
-#def handlerFilterTorrentFiles():
-#	torrent = searchDownloads(hashString=_params['hashString'])[0]['torrent']
-#	list = getTorrentVideoFilesList(torrent)
-#	selected = []
-#	for i in range (0, len(list)):
-#		d = eval(list[i].getProperty('code'))	
-#		if _params['selected'] == 'current':			
-#			if d['wanted']:
-#				selected.append(i)
-#		else:
-#			if not d['playCount'] > 0:
-#				selected.append(i)		
-#	result = xbmcgui.Dialog().multiselect("Included files", list, preselect=selected)			
-#	if result is None:
-#		return
-#	unselected = []
-#	for i in range (0, len(list)):
-#		if i not in result:
-#			d = eval(list[i].getProperty('code'))
-#			unselected.append(d['idFile'])	
-#	s = util.Session(_cookiesFolder)
-#	transmission.modify(s, _transmissionUrl, _params['hashString'], {'files-wanted': []})
-#	if len(unselected) > 0:
-#		transmission.modify(s, _transmissionUrl, _params['hashString'], {'files-unwanted': unselected})
+def handlerFilterTorrent():
+	data = transmission.get(_transmissionUrl, _params['hashString'])[0]
+	files = sorted(data['files'], key=lambda k: k['name']) 
+	fileslist = []
+	selected = []
+	for i in range(0,len(files)):
+		fileslist.append(xbmcgui.ListItem(files[i]['name']))
+		if files[i]['wanted']:
+			selected.append(i)
+	selected = xbmcgui.Dialog().multiselect("Folders", fileslist, preselect=selected)			
+	if selected is None:
+		return	
+	unselected = []
+	for i in range(0,len(files)):
+		if i not in selected:
+			unselected.append(files[i]['id'])
+	transmission.modify(_transmissionUrl, _params['hashString'], {'files-wanted': []})
+	if len(unselected) > 0:
+		transmission.modify(_transmissionUrl, _params['hashString'], {'files-unwanted': unselected})
 	
 	
 def handlerListTorrent():
@@ -369,13 +359,13 @@ def handlerListTorrents():
 			
 	
 def getDownloads():
-	path = _path + '/downloads'
+	path = _dataFolder + '/downloads'
 	if not os.path.isfile(path):
 		return {}
 	return util.fileToObj(path)
 
 def setDownloads(downloads):
-	path = _path + '/downloads'
+	path = _dataFolder + '/downloads'
 	util.objToFile(downloads, path)
 	
 def handlerDownloads():
