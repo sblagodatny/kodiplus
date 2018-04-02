@@ -21,8 +21,8 @@ import xbmcvfs
 import stat
 import cache
 import traceback
-import xbmcdb
 import requests
+import watchlog
 
 
 
@@ -45,6 +45,9 @@ _watchedFolder = _addon.getSetting('watchedFolder')
 
 _cookiesKinopoisk = _cookiesFolder + '/cookiesKinopoisk'
 _cookiesRutracker = _cookiesFolder + '/cookiesRutracker'
+
+_refreshFlag = _path + '/refresh'
+
 
 reload(sys)  
 sys.setdefaultencoding('utf8')	
@@ -88,12 +91,12 @@ def listContent(content, folder=-1):
 		if len(item['myrating']) > 0:
 			infoLabels['userrating'] = float(item['myrating'])
 			infoLabels['playcount'] = 1
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'id': item['id'], 'watched': 'False'}) + ')'
-			contextMenuItems.append(('Reset Watched',contextCmd))	
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'False'}) + ')'
+			contextMenuItems.append(('UnWatched',contextCmd))	
 		else:
 			infoLabels['playCount'] = 0
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'id': item['id'], 'watched': 'True'}) + ')'
-			contextMenuItems.append(('Set Watched',contextCmd))	
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'True'}) + ')'
+			contextMenuItems.append(('Watched',contextCmd))	
 		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'ManageFolders', 'id': item['id']}) + ')'
 		contextMenuItems.append(('Manage Folders',contextCmd))	
 		li.setArt({'thumb': kinopoisk.getThumb(item['id']), 'poster': kinopoisk.getPoster(item['id']), 'fanart': kinopoisk.getPoster(item['id'])})
@@ -130,38 +133,9 @@ def handlerListFolder():
 	listContent(content)
 	
 	
-#def getTorrentVideoFilesList(torrent):
-#	result = []
-#	files = sorted(torrent['files'], key=lambda k: k['name']) 
-#	for file in files:
-#		name = util.fileName(file['name'])
-#		pathOrig = file['name'].replace(name,'')
-#		path = _transmissionDownloadsFolder + pathOrig
-#		if util.fileExt(name.lower()) in ['avi','mkv','mp4']:
-#			item=xbmcgui.ListItem(name)
-#			item.setPath(path+name)
-#			info = xbmcdb.getVideoInfo(name,path)
-#			info = xbmcdb.getVideoInfo(name, pathOrig)
-#			item.setInfo( type="Video", infoLabels=info )
-#			if info is None:
-#				info = {'playcount':0}
-#			item.setProperty('code',str({'idFile': file['id'], 'playCount': info['playcount'], 'wanted': file['wanted']}))						
-#			result.append(item)
-#	return result
+
 	
 
-#		path = _transmissionDownloadsFolder + pathOrig
-#		if util.fileExt(name.lower()) in ['avi','mkv','mp4']:
-#			item=xbmcgui.ListItem(name)
-#			item.setPath(path+name)
-#			info = xbmcdb.getVideoInfo(name,path)
-#			info = xbmcdb.getVideoInfo(name, pathOrig)
-#			item.setInfo( type="Video", infoLabels=info )
-#			if info is None:
-#				info = {'playcount':0}
-#			item.setProperty('code',str({'idFile': file['id'], 'playCount': info['playcount'], 'wanted': file['wanted']}))						
-#			result.append(item)
-#	return result
 
 
 #def handlerFilterTorrentFiles():
@@ -191,16 +165,48 @@ def handlerListFolder():
 	
 	
 def handlerListTorrent():
+	xbmcplugin.setContent(_handleId, 'movies')
+	pathImg = _path + '/resources/img/'	
+	watchlog.init(_watchedFolder,_path)	
 	data = transmission.get(_transmissionUrl, _params['hashString'])[0]
 	files = sorted(data['files'], key=lambda k: k['name']) 
 	for file in files:
-		path = _transmissionDownloadsFolder + file['name']
+		path = os.path.abspath(_transmissionDownloadsFolder + file['name']).encode('utf8')
+		url = 'file:' + urllib.pathname2url(path)
+		name = util.fileName(urllib.unquote(url))		
 		if util.fileExt(path.lower()) not in ['avi','mkv','mp4']:
 			continue
-		item=xbmcgui.ListItem(util.fileName(path))
-		item.setPath(path)
-		xbmcplugin.addDirectoryItem(handle=_handleId, listitem=item, url=item.getPath())
+		infoLabels = {}
+		contextMenuItems = []
+		if watchlog.isWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + name):
+			infoLabels['playcount'] = 1
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'item': _params['hashString'] + '|' + name, 'watched': 'false'}) + ')'
+			contextMenuItems.append(('UnWatched',contextCmd))
+		else:
+			infoLabels['playcount'] = 0
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'item': _params['hashString'] + '|' + name, 'watched': 'true'}) + ')'
+			contextMenuItems.append(('Watched',contextCmd))
+		item=xbmcgui.ListItem(name, iconImage=pathImg + 'video.png')
+		item.addContextMenuItems(contextMenuItems, replaceItems=True)	
+		item.setInfo( type="Video", infoLabels=infoLabels )	
+		params = {
+			'handler': 'Play',
+			'url': url,
+			'name': name,
+			'hashString': _params['hashString']
+		}
+		url = _baseUrl+'?' + urllib.urlencode(params)								
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
+	
+	
+	
+def handlerPlay():
+	watchlog.setWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + _params['name'])
+	util.play(_params['url'], _params['name'])
+	xbmc.executebuiltin("Container.Refresh()")
+	
+	
 	
 def handlerAddTorrent():	
 	searchStr = _params['name']
@@ -220,7 +226,6 @@ def handlerAddTorrent():
 	if result==-1:
 		return
 	torrent = torrents[result]	
-	
 	hashString = transmission.add(_transmissionUrl, torrent['url'], _cookiesRutracker)
 	if _params['id'] not in downloads.keys():
 		downloads.update({
@@ -240,17 +245,24 @@ def log(message,loglevel=xbmc.LOGNOTICE):
 	xbmc.log('plugin.video.kinopoisk' + " : " + message,level=loglevel)
 		
 	
-def handlerSetWatched():
-	xbmc.executebuiltin( "ActivateWindow(busydialog)" )					
+def handlerSetWatchedKinopoisk():
 	kinopoisk.setWatched(_cookiesKinopoisk, _params['id'], eval(_params['watched']))	
-	xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 	downloads = getDownloads()
 	if _params['id'] in downloads.keys():
-		downloads[_params['id']]['myrating']=myrating
+		if _params['watched']:
+			downloads[_params['id']]['myrating']='7'
+		else:
+			downloads[_params['id']]['myrating']=''
 		setDownloads(downloads)
 	xbmc.executebuiltin('Container.Refresh')			
 
 	
+def handlerSetWatched():		
+	if _params['watched'] == 'true':
+		watchlog.setWatched(_watchedFolder, _baseUrl, _params['item'])
+	else:
+		watchlog.setUnWatched(_watchedFolder,_baseUrl, _params['item'])
+	xbmc.executebuiltin("Container.Refresh()")
 
 	
 def handlerManageFolders():

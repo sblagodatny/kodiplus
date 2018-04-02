@@ -1,15 +1,21 @@
+# coding: utf-8
+
+
 import os
 import shutil
 import hashlib
+import sys
 
 
 addon = 'plugin.video.kinopoiskplus'
-version = '1.5'
+version = '1.6'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
 addonBuildPath = basePath + '/build/' + addon
 
+reload(sys)  
+sys.setdefaultencoding('utf8')	
 
 def replaceInFile(file, strold, strnew):
 	with open (file, 'r' ) as f:

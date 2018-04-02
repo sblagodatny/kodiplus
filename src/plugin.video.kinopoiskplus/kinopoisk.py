@@ -111,6 +111,7 @@ def setWatched(pathCookies,id,state,vote='7'):
 	session.verify = False
 	util.loadCookies(session, pathCookies)
 	util.setUserAgent(session, 'chrome')
+	session.headers['X-Requested-With'] = 'XMLHttpRequest'
 	xsrftoken = kinopoiskplus.getUserDetails(session)['xsrftoken']
 	data = {
 		'token': xsrftoken,
@@ -119,15 +120,23 @@ def setWatched(pathCookies,id,state,vote='7'):
 	}		
 	if state:
 		data.update({'act': 'add'})
-		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
+		reply = session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
+		if reply.status_code != 200:
+			raise Exception ('Unable to update Kinopoisk')
 		del data['act']
 		data.update({'vote': vote})
-		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
+		reply = session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
+		if reply.status_code != 200:
+			raise Exception ('Unable to update Kinopoisk')
 	else:
 		data.update({'act': 'kill_vote'})
-		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
+		reply = session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
+		if reply.status_code != 200:
+			raise Exception ('Unable to update Kinopoisk')
 		data.update({'act': 'delete'})
-		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data)).content
+		reply = session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
+		if reply.status_code != 200:
+			raise Exception ('Unable to update Kinopoisk')
 
 		
 def getDetails(pathCookies, id):
