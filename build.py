@@ -8,7 +8,7 @@ import sys
 
 
 addon = 'plugin.video.youtubeplus'
-version = '1.8'
+version = '1.9'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

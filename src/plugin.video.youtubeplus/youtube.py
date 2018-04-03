@@ -170,7 +170,7 @@ def getPlaylistVideos(id, pathCookies):
 			continue		
 		content = {
 			'id': item['playlistVideoRenderer']['videoId'], 
-			'name': item['playlistVideoRenderer']['title']['simpleText'],
+			'name': '',
 #			'thumb': item['playlistVideoRenderer']['thumbnail']['thumbnails'][0]['url'],
 			'thumb': videoImage(item['playlistVideoRenderer']['videoId']),
 			'duration': '',
@@ -179,6 +179,10 @@ def getPlaylistVideos(id, pathCookies):
 			'owner': '',
 			'privacy': 'Public',		
 		}
+		try:
+			content['name'] = item['playlistVideoRenderer']['title']['simpleText']
+		except: 
+			continue
 		try: 
 			content['duration'] = item['playlistVideoRenderer']['lengthText']['simpleText'] 
 		except: 
