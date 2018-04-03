@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.kinopoiskplus'
-version = '1.7'
+addon = 'plugin.video.youtubeplus'
+version = '1.8'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

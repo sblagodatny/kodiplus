@@ -7,7 +7,7 @@ from jsinterp import JSInterpreter
 import urllib
 import urllib2
 import urlparse
-
+import requests
 
 youtubeUrl = 'https://www.youtube.com/'
 
@@ -16,35 +16,57 @@ youtubeUrl = 'https://www.youtube.com/'
 itagsVideo = ['22','18']
 	
 	
-def getMyVideos(session):
+def getMyVideos(pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	content = session.get( youtubeUrl + 'my_videos' + '?' + urllib.urlencode({'o': 'U'})).text		
 	dummy, i = util.substr ('"VIDEO_LIST_DISPLAY_OBJECT"',':',content)	
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
 		soup = BeautifulSoup(util.unescape(item['html'].decode('utf-8')), "html.parser")	
-		ptag = soup.find(class_="vm-video-indicators")
-		privacy = 'Public'				
-		if not ptag.find(class_='vm-unlisted').parent.has_attr('aria-hidden'):
-			privacy = 'Private'
-		if not ptag.find(class_='vm-private').parent.has_attr('aria-hidden'):
-			privacy = 'Private'
-		try:
-			duration = util.timeStrToSeconds(soup.find(class_="video-time").get_text())
-		except:
-			duration = ''
-		result.append({
+		ptag = soup.find(class_="vm-video-indicators")	
+		content = {
 			'id': item['id'],
 			'name': soup.find(class_="vm-video-title-content").get_text(),		
 			'thumb': videoImage(item['id']),			
-			'duration': duration,
-			'privacy': privacy,
-			'user': 'Unknown'			
-		})
+			'duration': '',
+			'publishedTime': '',
+			'viewCount': '',
+			'owner': 'You',
+			'privacy': 'Public',		
+		}
+		if not ptag.find(class_='vm-unlisted').parent.has_attr('aria-hidden'):
+			content['privacy'] = 'Private'
+		if not ptag.find(class_='vm-private').parent.has_attr('aria-hidden'):
+			content['privacy'] = 'Private'
+		try: 
+			content['duration'] = soup.find(class_="video-time").get_text()
+		except: 
+			continue	
+		try: 
+			content['publishedTime'] = soup.find(class_='localized-date').get_text().replace(' at','')			
+		except: 
+			None
+		try: 
+			content['viewCount'] = soup.find(class_='vm-video-side-view-count').get_text().replace(' views','').replace(' view','').replace("\n",'').replace(' ','')			
+		except: 
+			None
+		
+		
+		
+		result.append(content)
+		
 	return (result)
 	
 	
-def getMyPlaylists(session):
+def getMyPlaylists(pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	soup = BeautifulSoup(session.get( youtubeUrl + 'view_all_playlists').text, "html.parser")
 	for pltag in soup.find_all(class_="playlist-item"):
@@ -59,7 +81,11 @@ def getMyPlaylists(session):
 	return (result)
 
 
-def getSavedPlaylists(session):
+def getSavedPlaylists(pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	loginInfo = session.cookies._find(name='MyLoginInfo', domain='www.google.com').split('&')
 	channel = loginInfo[1]	
@@ -83,26 +109,46 @@ def getSavedPlaylists(session):
 
 
 	
-def searchVideos(searchStr, session):
+def searchVideos(searchStr, pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	content = session.get( youtubeUrl + 'results' + '?' + urllib.urlencode({'search_query': searchStr, 'sp': 'EgIQAVAU'})).text
 	dummy, i = util.substr ('"itemSectionRenderer":{"contents"',':',content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
 		if 'videoRenderer' not in item.keys():
-			continue
-		try:
-			duration = util.timeStrToSeconds(item['videoRenderer']['lengthText']['simpleText'])
-		except:
-			duration = ''
-		result.append({
+			continue		
+		content = {
 			'id': item['videoRenderer']['videoId'], 
 			'name': item['videoRenderer']['title']['simpleText'],
-			'thumb': item['videoRenderer']['thumbnail']['thumbnails'][0]['url'],
-			'duration': duration,
-			'privacy': 'Public',
-			'user': 'Unknown'
-		})
+#			'thumb': item['videoRenderer']['thumbnail']['thumbnails'][0]['url'],
+			'thumb': videoImage(item['videoRenderer']['videoId']),
+			'duration': '',
+			'publishedTime': '',
+			'viewCount': '',
+			'owner': '',
+			'privacy': 'Public',		
+		}
+		try: 
+			content['duration'] = item['videoRenderer']['lengthText']['simpleText'] 
+		except: 
+			continue
+		try: 
+			content['publishedTime'] = item['videoRenderer']['publishedTimeText']['simpleText'] 
+		except: 
+			None
+		try: 
+			content['viewCount'] = item['videoRenderer']['viewCountText']['simpleText'].replace(' views','') 
+		except: 
+			None
+		try: 
+			content['owner'] = item['videoRenderer']['ownerText']['runs'][0]['text'] 
+		except: 
+			None
+		result.append(content)
 	return (result)
 
 	
@@ -110,32 +156,46 @@ def videoImage(id):
 	return ('https://i.ytimg.com/vi/' + id + '/hqdefault.jpg')
 	
 	
-def getPlaylistVideos(id, session):
+def getPlaylistVideos(id, pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	content = session.get( youtubeUrl + 'playlist' + '?' + urllib.urlencode({'list': id})).text
 	dummy, i = util.substr ('playlistVideoListRenderer":{"contents"',':',content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
-		try:
-			name = item['playlistVideoRenderer']['title']['simpleText']
-		except:
-			continue
-		try:
-			duration = util.timeStrToSeconds(item['playlistVideoRenderer']['lengthText']['simpleText'])
-		except:
-			duration = ''
-		result.append({
+		if 'playlistVideoRenderer' not in item.keys():
+			continue		
+		content = {
 			'id': item['playlistVideoRenderer']['videoId'], 
-			'name': name,
-			'thumb': item['playlistVideoRenderer']['thumbnail']['thumbnails'][0]['url'],
-			'duration': duration,
-			'privacy': 'Public',
-			'user': 'Unknown'
-		})
+			'name': item['playlistVideoRenderer']['title']['simpleText'],
+#			'thumb': item['playlistVideoRenderer']['thumbnail']['thumbnails'][0]['url'],
+			'thumb': videoImage(item['playlistVideoRenderer']['videoId']),
+			'duration': '',
+			'publishedTime': '',
+			'viewCount': '',
+			'owner': '',
+			'privacy': 'Public',		
+		}
+		try: 
+			content['duration'] = item['playlistVideoRenderer']['lengthText']['simpleText'] 
+		except: 
+			continue
+		try: 
+			content['owner'] = item['playlistVideoRenderer']['shortBylineText']['runs'][0]['text'] 
+		except: 
+			None
+		result.append(content)	
 	return (result)
 
 	
-def searchPlaylists(searchStr, session):
+def searchPlaylists(searchStr, pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	result = []
 	content = session.get( youtubeUrl + 'results' + '?' + urllib.urlencode({'search_query': searchStr, 'sp': 'EgIQA1AU'})).text
 	dummy, i = util.substr ('"itemSectionRenderer":{"contents"',':',content)
@@ -171,7 +231,11 @@ def getCipher(session, player):
 	return jsi.extract_function(function)
 	
 	
-def getStreams(id, session):	
+def getStreams(id, pathCookies):	
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')	
 	streams = {}
 	player = getPlayer(session, id)
 	cipher = getCipher(session, player)
@@ -184,6 +248,7 @@ def getStreams(id, session):
 			if '&signature=' not in url and 's' in stream.keys():
 				url = url + '&signature=' + cipher([stream['s']])
 			streams.update({stream['itag']: url})
-	return streams
+	cookies = session.cookies.get_dict(domain='.youtube.com')
+	return streams, cookies
 
 	
