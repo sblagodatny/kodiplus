@@ -6,7 +6,6 @@ import urlparse
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcvfs
 import urllib
 import urllib2
 import kinopoisk
@@ -17,11 +16,7 @@ import xbmcaddon
 import util
 import gui
 import time
-import xbmcvfs
-import stat
 import cache
-import traceback
-import requests
 import watchlog
 
 
@@ -134,12 +129,16 @@ def handlerListFolder():
 
 
 def handlerFilterTorrent():
+	watchlog.init(_watchedFolder,_path)	
 	data = transmission.get(_transmissionUrl, _params['hashString'])[0]
 	files = sorted(data['files'], key=lambda k: k['name']) 
 	fileslist = []
 	selected = []
 	for i in range(0,len(files)):
-		fileslist.append(xbmcgui.ListItem(files[i]['name']))
+		name = files[i]['name']
+		if watchlog.isWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + name):
+			name = 'V ' + name
+		fileslist.append(xbmcgui.ListItem(name))
 		if files[i]['wanted']:
 			selected.append(i)
 	selected = xbmcgui.Dialog().multiselect("Folders", fileslist, preselect=selected)			
@@ -156,18 +155,25 @@ def handlerFilterTorrent():
 	
 def handlerListTorrent():
 	xbmcplugin.setContent(_handleId, 'movies')
+	autoplay = []
+	autoplayIndex = 0
 	pathImg = _path + '/resources/img/'	
 	watchlog.init(_watchedFolder,_path)	
 	data = transmission.get(_transmissionUrl, _params['hashString'])[0]
 	files = sorted(data['files'], key=lambda k: k['name']) 
 	for file in files:
+		if not file['wanted']:
+			continue
+		contextMenuItems=[]
+		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'AutoPlay', 'autoplayIndex': str(autoplayIndex)}) + ')'
+		contextMenuItems.append(('Auto Play',contextCmd))
 		path = os.path.abspath(_transmissionDownloadsFolder + file['name']).encode('utf8')
 		url = 'file:' + urllib.pathname2url(path)
+#		url = urllib.quote(path.replace("\\",'/'))
 		name = util.fileName(urllib.unquote(url))		
 		if util.fileExt(path.lower()) not in ['avi','mkv','mp4']:
 			continue
 		infoLabels = {}
-		contextMenuItems = []
 		if watchlog.isWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + name):
 			infoLabels['playcount'] = 1
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'item': _params['hashString'] + '|' + name, 'watched': 'false'}) + ')'
@@ -186,10 +192,23 @@ def handlerListTorrent():
 			'hashString': _params['hashString']
 		}
 		url = _baseUrl+'?' + urllib.urlencode(params)								
+		autoplay.append(params)
+		autoplayIndex = autoplayIndex + 1
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
+	util.objToFile(autoplay, _path + '/autoplay')
 	
-	
+
+def handlerAutoPlay():		
+	autoplayIndex = int(_params['autoplayIndex'])
+	autoplay = util.fileToObj(_path + '/autoplay')
+	for i in range(autoplayIndex, len(autoplay)):
+		_params.update(autoplay[i])
+		handlerPlay()
+		if i < len(autoplay)-1:
+			if xbmcgui.Dialog().yesno(heading='Playing next', line1=' ', line3=autoplay[i+1]['name'], yeslabel='Stop', nolabel='Play', autoclose=8000):
+				break
+				
 	
 def handlerPlay():
 	watchlog.setWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + _params['name'])
@@ -209,13 +228,15 @@ def handlerAddTorrent():
 	if _params['id'] in downloads.keys():
 		dtorrents = downloads[_params['id']]['torrents'].values()
 	values = []
+	ftorrents = []
 	for torrent in torrents:				
 		if torrent['name'] not in dtorrents:
+			ftorrents.append(torrent)
 			values.append ('[' + str(round((float(torrent["size"]) / (1024*1024*1024)),2)) + 'Gb, ' + torrent["seeds"] + ' Seeds] ' + torrent['name'] )
 	result = xbmcgui.Dialog().select("Torrents", values)			
 	if result==-1:
 		return
-	torrent = torrents[result]	
+	torrent = ftorrents[result]	
 	hashString = transmission.add(_transmissionUrl, torrent['url'], _cookiesRutracker)
 	if _params['id'] not in downloads.keys():
 		downloads.update({
