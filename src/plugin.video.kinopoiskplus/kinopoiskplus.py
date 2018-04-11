@@ -214,18 +214,24 @@ def getDetails(pathCookies, id):
 	soap = BeautifulSoup(session.get(url=url).content, "html.parser")	
 	actors=[]
 	for tag in soap.find(class_='movie-actors').find_all(class_='person'):
-		actors.append({
-			'name': tag.find(class_='person__info-name')['content'],
-			'role': 'Актер',
-			'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-		})
+		try:
+			actors.append({
+				'name': tag.find(class_='person__info-name')['content'],
+				'role': 'Актер',
+				'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
+			})
+		except:
+			None
 	directors=[]
 	for tag in soap.find(class_='movie-directors').find_all(class_='person'):
-		directors.append({
-			'name': tag.find(class_='person__info-name')['content'],
-			'role': 'Режиссер',
-			'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-		})
+		try:
+			directors.append({
+				'name': tag.find(class_='person__info-name')['content'],
+				'role': 'Режиссер',
+				'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
+			})
+		except:
+			None
 	return {
 		'description': soap.find(class_="film-description").find('div').get_text(),
 		'actors': actors,
