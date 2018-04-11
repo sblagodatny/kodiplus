@@ -3,7 +3,6 @@
 	
 	<category label="32000">
 		<setting id="dataFolder" type="folder" label="32010"/>
-		<setting id="cacheFolder" type="folder" label="32011"/>
 		<setting id="watchedFolder" type="folder" label="32012"/>
 		<setting id="transmissionUrl" type="text" label="32017" default="http://127.0.0.1:9091/transmission/rpc"/>
 		<setting id="transmissionDownloadsFolder" type="folder" label="32018"/>				

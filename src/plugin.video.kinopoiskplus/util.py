@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import xbmcgui
 import xbmc
 import os
+import HTMLParser	
 
 
 
@@ -51,17 +52,26 @@ def escape(str):
 		.replace('"', "&quot;")
 		.replace('/', '\/')
         )
+
+_htmlEscape = {
+	"&amp;": "&",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&#39;": "'",
+	"&quot;": '"',
+	"\/": '/',
+	"&thinsp;": ' ',
+	"&ndash;": '-'
+}
 		
 def unescape(str):
-    return (str
-        .replace("&amp;","&")
-		.replace("&lt;","<")
-		.replace("&gt;",">")
-        .replace("&#39;","'")
-		.replace("&quot;",'"')
-		.replace("\/",'/')
-        )		
+	return(HTMLParser.HTMLParser().unescape(nvl(str,'')))
 		
+def unsecapelist(list):
+	result = []
+	for l in list:
+		result.append(unescape(l))
+
 	
 def timeStrToSeconds (str):
 	format = '%H:%M:%S'
@@ -188,18 +198,9 @@ def setCookie(session, domain, name, value):
 	}
 	session.cookies.set(name=name, value=value, **args)
 
-#def urldecode(params):	
-#	result = {}
-#	for kv in params.split("&"):
-#		key, value = kv.split("=")
-#		result.update({key: value})	
-#	return (result)
-	
-#def urlencode(params):
-#	result = ''
-#	for key in params.keys():
-#		result = result + key + '=' + params[key] + '&'
-#	return(result[:-1])
+def headerCookie(cookiesdict):
+	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookiesdict.items()])}	
+	return headers
 	
 
 	
