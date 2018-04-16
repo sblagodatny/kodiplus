@@ -344,6 +344,36 @@ def handlerSeasons():
 			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], False)		
 	xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 	
+
+
+def handlerRecommendationResult():	
+	content = kinopoiskplus.getRecommended(_cookiesKinopoisk, eval(_params['criteria']))
+	listContent(content)
+	
+	
+def handlerRecommendation():
+	criteria = []
+	filters = kinopoiskplus.getRecommendedCriteria(_cookiesKinopoisk)
+	for filter in filters:
+		if filter['multiple']:
+			selected = xbmcgui.Dialog().multiselect(filter['displayName'], filter['values'], preselect=[])
+			if selected:
+				values = []
+				for i in selected:
+					values.append(filter['values'][i])
+				criteria.append({'param': filter['param'], 'values': values})	
+		else:
+			selected = xbmcgui.Dialog().select(filter['displayName'], filter['values'])			
+			if selected != -1:
+				criteria.append({'param': filter['param'], 'values': [filter['values'][selected]]})	
+	params = {
+		'handler': 'RecommendationResult',
+		'criteria': criteria
+	}
+	url=_baseUrl+'?' + urllib.urlencode( params )	
+	xbmc.executebuiltin("Container.Update(" + url + ")")
+
+
 	
 def handlerSearchResults():	
 	content = kinopoiskplus.searchByTitle(_cookiesKinopoisk, _params['searchStr'],_params['type'])
@@ -424,7 +454,8 @@ def handlerRoot():
 	rootLinks = [		
 		{'name': 'Загрузки', 'urlParams': {'handler': 'Downloads'}, 'icon': pathImg+'Downloads.png'},
 		{'name': 'Избранное', 'urlParams': {'handler': 'Favorites'}, 'icon': pathImg+'Folders.png'},
-		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': pathImg+'Search.png'}
+		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': pathImg+'Search.png'},
+		{'name': 'Рекоммендация', 'urlParams': {'handler': 'Recommendation'}, 'icon': pathImg+'Recommendation.png'}
 	]
 	for rootLink in rootLinks:
 		item=xbmcgui.ListItem(rootLink['name'], iconImage=rootLink['icon'])		

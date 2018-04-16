@@ -213,32 +213,71 @@ def getDetails(pathCookies, id):
 	url = 'https://plus.kinopoisk.ru/film/' + id + '/'
 	soap = BeautifulSoup(session.get(url=url).content, "html.parser")	
 	actors=[]
-	for tag in soap.find(class_='movie-actors').find_all(class_='person'):
-		try:
-			actors.append({
-				'name': tag.find(class_='person__info-name')['content'],
-				'role': 'Актер',
-				'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-			})
-		except:
-			None
+	try:
+		for tag in soap.find(class_='movie-actors').find_all(class_='person'):
+			try:
+				actors.append({
+					'name': tag.find(class_='person__info-name')['content'],
+					'role': 'Актер',
+					'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
+				})
+			except:
+				None
+	except:
+		None
 	directors=[]
-	for tag in soap.find(class_='movie-directors').find_all(class_='person'):
-		try:
-			directors.append({
-				'name': tag.find(class_='person__info-name')['content'],
-				'role': 'Режиссер',
-				'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-			})
-		except:
-			None
+	try:
+		for tag in soap.find(class_='movie-directors').find_all(class_='person'):
+			try:
+				directors.append({
+					'name': tag.find(class_='person__info-name')['content'],
+					'role': 'Режиссер',
+					'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
+				})
+			except:
+				None
+	except:
+		None
 	return {
 		'description': soap.find(class_="film-description").find('div').get_text(),
 		'actors': actors,
 		'directors': directors
 	}
 	
-		
+	
+	
+	
+def getRecommended(pathCookies, criteria):	
+	session = initSession(pathCookies)	
+	url = 'https://plus.kinopoisk.ru/catalogue/?advanced=1'
+	for filter in criteria:
+		for value in filter['values']:
+			url = url + '&' + filter['param'] + '=' + value
+	return pageLoop(session, url, {}, 3)	
+
+	
+	
+def getRecommendedCriteria(pathCookies):
+	session = initSession(pathCookies)	
+	params = {'advanced': 1}
+	url = 'https://plus.kinopoisk.ru/catalogue/'
+	soap = BeautifulSoup(session.get(url=url, params=params).content, "html.parser")	
+	filters = [
+		{'name': 'what', 'displayName': 'Что', 'param': 'what', 'multiple': False, 'values': []}, 
+		{'name': 'genres', 'displayName': 'Жанры', 'param': 'genres', 'multiple': True, 'values': []}, 
+		{'name': 'countries', 'displayName': 'Страны', 'param': 'countries', 'multiple': True, 'values': []}, 
+		{'name': 'tags0', 'displayName': 'Тэги', 'param': 'tags', 'multiple': True, 'values': []} 
+	]
+	for tag in soap.find_all(class_='select__select'):
+		for i in range (0, len(filters)):
+			if filters[i]['name'] == tag['name']:
+				for otag in tag.find_all(class_="select__select-option"):
+					if otag['value'] not in filters[i]['values']:
+						filters[i]['values'].append(otag['value'])
+	return filters
+	
+
+	
 def getThumb(id):
 	return 'https://www.kinopoisk.ru/images/sm_film/' + id + '.jpg'
 	
