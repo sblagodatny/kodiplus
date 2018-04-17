@@ -138,7 +138,7 @@
 </addon>
 
 
-<addon id="plugin.video.mediabrowser" version="1.0" name="Media Browser" provider-name="Stas Blagodatny">
+<addon id="plugin.video.mediabrowser" version="1.1" name="Media Browser" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>

@@ -114,7 +114,7 @@ def handlerAutoPlay():
 	
 def handlerPlay():
 	url = 'file:' + urllib.pathname2url(_params['path'])
-	util.play(_params['path'], url)
+	util.play(url,_params['name'])
 	
 	
 
