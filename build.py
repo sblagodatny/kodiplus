@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.kinopoiskplus'
-version = '1.11'
+addon = 'plugin.video.mediabrowser'
+version = '1.0'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="plugin.video.mediabrowser" version="1.0" name="Media Browser" provider-name="Stas Blagodatny">
+<requires>
+  <import addon="xbmc.python" version="2.7.10"/>
+  <import addon="script.module.requests"/>
+  <import addon="script.module.beautifulsoup4"/>
+</requires>
+<extension point="xbmc.python.pluginsource" library="main.py">
+  <provides>video</provides>
+</extension>
+<extension point="xbmc.addon.metadata">
+  <summary lang="en">Media Browser</summary>
+  <description lang="en">Media Browser</description>
+</extension>
+</addon>
