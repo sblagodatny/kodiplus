@@ -227,9 +227,10 @@ def getPlayer(session, id):
 	player = json.loads(util.parseBrackets(content, i, ['{','}']))
 	return player
 	
+	
 def getCipher(session, player):
 	playerJS = session.get( youtubeUrl + player.get("assets", {}).get("js")).text	
-	function, dummy = util.substr ('"signature":"sig";','(',playerJS)
+	function, dummy = util.substr ('"signature":"sig"','(',playerJS)
 	function = function.split('=')[1]
 	jsi = JSInterpreter(playerJS)
 	return jsi.extract_function(function)
