@@ -3,8 +3,16 @@ import requests
 import util
 import json
 	
-
-def getAlbums(session):
+def initSession(pathCookies):
+	session = requests.Session()
+	session.verify = False
+	util.loadCookies(session, pathCookies)
+	util.setUserAgent(session, 'chrome')
+	return session
+	
+	
+def getAlbums(pathCookies):
+	session = initSession(pathCookies)
 	result = []
 	content = session.get("https://photos.google.com/albums").text
 	dummy, i = util.substr ("key: 'ds:2', isError:  false , hash:","return",content)
@@ -19,23 +27,40 @@ def getAlbums(session):
 	return(resultsorted)
 	
 	
-def getAlbumPhotos(albumId, session):
-	result = []
+def getAlbumContent(pathCookies,albumId):
+	session = initSession(pathCookies)
+	photos = []
+	videos = []
 	content = session.get("https://photos.google.com/album/" + albumId).text
 	dummy, i = util.substr ("key: 'ds:0', isError:  false , hash:","return",content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
-	i = 1
+#	util.objToFile(str(data),pathCookies.replace('/cookies','/obj.txt'))
 	for row in data[1]:
-		result.append({
-			'id': row[0],
-			'name': 'Photo ' + str(i),
-			'thumb': row[1][0],
-			'width': row[1][1],
-			'height': row[1][2],
-			'fullsize': row[1][0] + '=w' + str(row[1][1]) + '-h' + str(row[1][2]) + '-no'	
-		})	
-		i = i + 1
-	return(result)
-
-
+		id = row[0]
+		url = row[1][0]
+		width = row[1][1]
+		height = row[1][2]
+		name = 'Photo'
+		isVideo = False
+		if '76647426' in row[-1].keys():
+			name = 'Video'
+			isVideo = True
+		if isVideo:
+			format = '=m22'
+			if width < 1280:
+				format = '=m18'
+			videos.append({
+				'id': id,
+				'url': url + format,
+				'thumb': url,
+				'name': name
+			})
+		else:
+			photos.append({
+				'id': id,
+				'url': url + '=w' + str(width) + '-h' + str(height) + '-no',
+				'thumb': url,
+				'name': name
+			})
+	return({'photos': photos, 'videos': videos})
 

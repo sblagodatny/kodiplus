@@ -17,14 +17,21 @@ _handleId = int(sys.argv[1])
 _params = dict(urlparse.parse_qsl(sys.argv[2][1:]))	
 _addon = xbmcaddon.Addon()
 _path = _addon.getAddonInfo('icon').replace('icon.png','')
+
+_dataFolder = _addon.getSetting('cookiesFolder')
+_cookiesGoogle = _dataFolder + '/cookies'
+
+
+
+def validateSettings():
+	if len(_dataFolder)==0: 
+		xbmcgui.Dialog().ok('Error', 'Please configure settings')
+		return False
+	return True
 	
-_cookiesFolder = _addon.getSetting('cookiesFolder')
-
-
 	
 def handlerListAlbums():
-	s = util.Session(_cookiesFolder)
-	content = gphotos.getAlbums(s)
+	content = gphotos.getAlbums(_cookiesGoogle)
 	for data in content:
 		item = xbmcgui.ListItem(data["name"])
 		item.setArt({'thumb': data["thumb"], 'poster': data["thumb"], 'fanart': data["thumb"]})
@@ -37,32 +44,42 @@ def handlerListAlbums():
 
 	
 def handlerListAlbumPhotos():
-	s = util.Session(_cookiesFolder)
-	content = gphotos.getAlbumPhotos(_params['id'], s)
-	for data in content:
-		item = xbmcgui.ListItem(str(data["name"]))
-		item.setArt({'thumb': data["thumb"], 'poster': data["thumb"], 'fanart': data["thumb"]})
-		item.setInfo(
-			type='pictures',
-			infoLabels={
-				'title': data["name"],
-				'picturepath': data["fullsize"],
-				'exif:path':  data["fullsize"]
+	content = gphotos.getAlbumContent(_cookiesGoogle,_params['id'])
+	for data in content['videos']:
+		item = xbmcgui.ListItem(data['name'])
+		item.setArt({'thumb': data["thumb"]})	
+		item.setInfo(type='video', infoLabels={})			
+		params = {
+			'handler': 'Play',
+			'url': data['url'],
+			'name': data['name']
+		}
+		url = _baseUrl+'?' + urllib.urlencode(params)								
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
+	for data in content['photos']:
+		item = xbmcgui.ListItem(data['name'])
+		item.setArt({'thumb': data["thumb"]})
+		item.setInfo(type='pictures', infoLabels={
+				'title': data['name'],
+				'picturepath': data['url'],
+				'exif:path':  data['url']
 			}
 		)			
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=data["fullsize"], listitem=item)			
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=data['url'], listitem=item)			
 	xbmcplugin.endOfDirectory(_handleId)			
 
+	
+def handlerPlay():
+	util.play(_params['url'], _params['name'])
+	
 	
 def handlerRoot():
 	handlerListAlbums()
 
-	
-if len(_cookiesFolder) == 0:
-	xbmcgui.Dialog().ok('Error', 'Please configure settings')
-else:	
+
+
+if validateSettings():
 	if 'handler' in _params.keys():
 		globals()['handler' + _params['handler']]()
 	else:
 		handlerRoot()
-
