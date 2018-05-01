@@ -29,54 +29,108 @@ def validateSettings():
 		return False
 	return True
 	
-	
-def handlerListAlbums():
-	content = gphotos.getAlbums(_cookiesGoogle)
-	for data in content:
-		item = xbmcgui.ListItem(data["name"])
+
+def listAlbums(albums):	
+	for data in albums:
+		name = util.bold(data["name"])
+		if data['sharedKey'] is not None:
+			name = util.color(name, 'orange')
+		item = xbmcgui.ListItem(name)
 		item.setArt({'thumb': data["thumb"], 'poster': data["thumb"], 'fanart': data["thumb"]})
 		params = {
-			'handler': 'ListAlbumPhotos',
+			'handler': 'ListAlbum',
 			'id': data["id"],
+			'sharedKey': data['sharedKey']
 		}						
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)
-	xbmcplugin.endOfDirectory(_handleId)		
 
-	
-def handlerListAlbumPhotos():
-	content = gphotos.getAlbumContent(_cookiesGoogle,_params['id'])
-	for data in content['videos']:
-		item = xbmcgui.ListItem(data['name'])
+		
+def listVideos(videos):
+	for data in videos:
+		name = 'Video ' + str(data['ts'])
+		item = xbmcgui.ListItem(name)
 		item.setArt({'thumb': data["thumb"]})	
 		item.setInfo(type='video', infoLabels={})			
 		params = {
 			'handler': 'Play',
 			'url': data['url'],
-			'name': data['name']
+			'name': name
 		}
 		url = _baseUrl+'?' + urllib.urlencode(params)								
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=url, isFolder=True, listitem=item)
-	for data in content['photos']:
-		item = xbmcgui.ListItem(data['name'])
+
+def listPhotos(photos):
+	for data in photos:
+		name = 'Photo ' + str(data['ts'])
+		item = xbmcgui.ListItem(name)
 		item.setArt({'thumb': data["thumb"]})
 		item.setInfo(type='pictures', infoLabels={
-				'title': data['name'],
+				'title': name,
 				'picturepath': data['url'],
 				'exif:path':  data['url']
 			}
 		)			
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=data['url'], listitem=item)			
+
+
+def handlerAlbums():
+	xbmcplugin.setContent(_handleId, 'images')
+	content = gphotos.getAlbums(_cookiesGoogle)
+	listAlbums(content)
+	xbmcplugin.endOfDirectory(_handleId)
+	
+		
+def handlerListAlbum():
+	xbmcplugin.setContent(_handleId, 'images')
+	sharedKey = None
+	if len(_params['sharedKey']) > 6:
+		sharedKey = _params['sharedKey']
+	content = gphotos.getAlbumContent(_cookiesGoogle,_params['id'],sharedKey)
+	listVideos(content['videos'])
+	listPhotos(content['photos'])
 	xbmcplugin.endOfDirectory(_handleId)			
 
 	
 def handlerPlay():
 	util.play(_params['url'], _params['name'])
 	
+
+def handlerSearchResults():
+	xbmcplugin.setContent(_handleId, 'images')
+	content = gphotos.search(_cookiesGoogle, _params['searchStr'])
+	listAlbums(content['albums'])
+	listVideos(content['videos'])
+	listPhotos(content['photos'])
+	xbmcplugin.endOfDirectory(_handleId)			
+
+
+def handlerSearch():
+	kb = xbmc.Keyboard('', 'Поиск', True)
+	kb.setHiddenInput(False)
+	kb.doModal()
+	if not (kb.isConfirmed()):
+		return		
+	searchStr = kb.getText()
+	del kb		
+	params = {
+		'handler': _params['handlerRedirect'],
+		'searchStr': searchStr
+	}
+	url=_baseUrl+'?' + urllib.urlencode( params )	
+	xbmc.executebuiltin("Container.Update(" + url + ")")
+	
 	
 def handlerRoot():
-	handlerListAlbums()
-
-
+	pathImg = _path + '/resources/img/'	
+	rootLinks = [		
+		{'name': 'Альбомы', 'urlParams': {'handler': 'Albums'}, 'icon': pathImg+'Albums.png'},
+		{'name': 'Поиск', 'urlParams': {'handler': 'Search', 'handlerRedirect': 'SearchResults'}, 'icon': pathImg+'Search.png'}		
+	]
+	for rootLink in rootLinks:
+		item=xbmcgui.ListItem(rootLink['name'], iconImage=rootLink['icon'])		
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(rootLink['urlParams']), isFolder=True, listitem=item)
+	xbmcplugin.endOfDirectory(_handleId)	
+	
 
 if validateSettings():
 	if 'handler' in _params.keys():

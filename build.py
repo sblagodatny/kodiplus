@@ -8,7 +8,7 @@ import sys
 
 
 addon = 'plugin.image.gphotos'
-version = '1.2'
+version = '1.3'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
