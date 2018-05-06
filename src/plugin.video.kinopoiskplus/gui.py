@@ -3,7 +3,6 @@
 
 import xbmc
 import xbmcgui
-import kinopoisk
 import os
 from threading import Thread
 import time

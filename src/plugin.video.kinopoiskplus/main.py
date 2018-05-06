@@ -45,10 +45,24 @@ reload(sys)
 sys.setdefaultencoding('utf8')	
 
 
+_mandatorySettings = [
+	'dataFolder', 
+	'kinopoiskUser', 
+	'kinopoiskPassword', 
+	'rutrackerUser', 
+	'rutrackerPassword', 
+	'transmissionUrl',
+	'transmissionDownloadsFolder',
+	'watchedFolder'
+]	
+
+
+
 def validateSettings():
-	if len(_dataFolder)==0 or len(_kinopoiskUser)==0 or len(_kinopoiskPassword)==0 or len(_rutrackerUser)==0 or len(_rutrackerPassword)==0 or len(_transmissionUrl)==0 or len(_transmissionDownloadsFolder)==0 or len(_watchedFolder)==0: 
-		xbmcgui.Dialog().ok('Error', 'Please configure settings')
-		return False
+	for setting in _mandatorySettings:
+		if len(_addon.getSetting(setting))==0:
+			xbmcgui.Dialog().ok('Error', 'Please configure settings')
+			return False
 	return True
 
 
@@ -250,7 +264,6 @@ def handlerListTorrents():
 	downloads = getDownloads()
 	pathImg = _path + '/resources/img/'	
 	content = []
-	downloads = getDownloads()
 	torrents = {}
 	if _params['id'] in downloads.keys():
 		torrents = downloads[_params['id']]['torrents']
@@ -412,7 +425,23 @@ def getDownloads():
 	path = _dataFolder + '/downloads'
 	if not os.path.isfile(path):
 		return {}
-	return util.fileToObj(path)
+	downloads = util.fileToObj(path)	
+	hashStrings = []
+	data = transmission.get(_transmissionUrl)
+	for row in data:
+		hashStrings.append(row['hashString'])
+	changed = False
+	for download in downloads.values():
+		for hashString in download['torrents'].keys():
+			if hashString not in hashStrings:
+				del downloads[download['item']['id']]['torrents'][hashString]
+				changed = True
+		if not downloads[download['item']['id']]['torrents']:
+			del downloads[download['item']['id']]
+	if changed:
+		setDownloads(downloads)
+	return downloads
+	
 
 def setDownloads(downloads):
 	path = _dataFolder + '/downloads'
