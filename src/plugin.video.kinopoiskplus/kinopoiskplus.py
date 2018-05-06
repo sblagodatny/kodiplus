@@ -209,41 +209,35 @@ def setSeasonWatched(pathCookies, id, season, state):
 		raise Exception('Unable to set season watched')
 		
 
+		
+def getCast(soap, role):
+	result = []
+	data = soap.find("div", class_="kinoisland__title", string=role)
+	if data is None:
+		return result
+	data = data.find_next()
+	for tag in data.find_all(class_ = "person"):
+		try:
+			thumbnail = 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
+		except:
+			thumbnail = None	
+		result.append({
+			'name': tag.find(class_="person__info-name")['content'],
+			'role': role,
+			'thumbnail': thumbnail
+		})	
+	return result
+	
 def getDetails(pathCookies, id):
 	session = initSession(pathCookies)
-	url = 'https://plus.kinopoisk.ru/film/' + id + '/'
+	url = 'https://plus.kinopoisk.ru/film/' + id + '/details/cast/'
 	soap = BeautifulSoup(session.get(url=url).content, "html.parser")	
-	actors=[]
-	try:
-		for tag in soap.find(class_='movie-actors').find_all(class_='person'):
-			try:
-				actors.append({
-					'name': tag.find(class_='person__info-name')['content'],
-					'role': 'Актер',
-					'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-				})
-			except:
-				None
-	except:
-		None
-	directors=[]
-	try:
-		for tag in soap.find(class_='movie-directors').find_all(class_='person'):
-			try:
-				directors.append({
-					'name': tag.find(class_='person__info-name')['content'],
-					'role': 'Режиссер',
-					'thumbnail': 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-				})
-			except:
-				None
-	except:
-		None
-	return {
-		'description': soap.find(class_="film-description").find('div').get_text(),
-		'actors': actors,
-		'directors': directors
+	result = {
+		'description': soap.find('div',{'itemprop': 'description'}).get_text(),
+		'actors': getCast(soap, 'Актёр'),
+		'directors': getCast(soap, 'Режиссёр')
 	}
+	return result
 	
 	
 	

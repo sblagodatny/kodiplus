@@ -218,10 +218,16 @@ def handlerAddTorrent():
 	if _params['id'] in downloads.keys():
 		dtorrents = downloads[_params['id']]['torrents'].values()
 	
-	for director in details['directors']:
-		torrentsI = rutracker.search(_cookiesRutracker, item['title'] + ' ' + director['name'])
+	if details['directors']:
+		for i in range(0, len(details['directors'])):
+			torrentsI = rutracker.search(_cookiesRutracker, item['title'] + ' ' + details['directors'][i]['name'])
+			torrents.extend(t for t in torrentsI if t not in torrents and t['name'] not in dtorrents)
+			if i==4:
+				break
+	else:
+		torrentsI = rutracker.search(_cookiesRutracker, item['title'])
 		torrents.extend(t for t in torrentsI if t not in torrents and t['name'] not in dtorrents)
-		
+	
 	values = []
 	for torrent in torrents:						
 		values.append ('[' + str(round((float(torrent["size"]) / (1024*1024*1024)),2)) + 'Gb, ' + torrent["seeds"] + ' Seeds] ' + torrent['name'] )
