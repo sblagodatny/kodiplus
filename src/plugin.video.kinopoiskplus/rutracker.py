@@ -43,22 +43,9 @@ def getUserDetails(session):
 	except:
 		return None	
 		
-
-def verifyStrictExpr(name, strict):
-	if strict is None:
-		return True
-	for se in strict:
-		found = False
-		for s in se:
-			if s in name:
-#			if s.replace('ё','е') in name.replace('ё','е'):
-				found = True
-		if not found:
-			return False
-	return True
 	
 	
-def search (pathCookies, str, strict=None):
+def search (pathCookies, str):
 	session = requests.Session()
 	session.verify = False
 	util.loadCookies(session, pathCookies)
@@ -83,9 +70,7 @@ def search (pathCookies, str, strict=None):
 		if seeds == '0':
 			continue
 		subtag = tag.find(class_="tLink")
-		name = subtag.get_text()
-		if not verifyStrictExpr(name, strict):
-			continue			
+		name = subtag.get_text()		
 		result.append({
 			'id': subtag['data-topic_id'], 	
 			'name': name,

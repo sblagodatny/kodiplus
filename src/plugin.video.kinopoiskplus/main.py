@@ -197,23 +197,24 @@ def handlerPlay():
 def handlerAddTorrent():
 	cache =	util.fileToObj(_path + '/cache')
 	item = cache[_params['id']]
-	searchStr = item['title']
-	strict = []
-	torrents = rutracker.search(_cookiesRutracker, searchStr, strict)
+	torrents = []	
+	details = kinopoiskplus.getDetails(_cookiesKinopoisk, _params['id'])
 	downloads = getDownloads()
 	dtorrents = []
 	if _params['id'] in downloads.keys():
 		dtorrents = downloads[_params['id']]['torrents'].values()
+	
+	for director in details['directors']:
+		torrentsI = rutracker.search(_cookiesRutracker, item['title'] + ' ' + director['name'])
+		torrents.extend(t for t in torrentsI if t not in torrents and t['name'] not in dtorrents)
+		
 	values = []
-	ftorrents = []
-	for torrent in torrents:				
-		if torrent['name'] not in dtorrents:
-			ftorrents.append(torrent)
-			values.append ('[' + str(round((float(torrent["size"]) / (1024*1024*1024)),2)) + 'Gb, ' + torrent["seeds"] + ' Seeds] ' + torrent['name'] )
+	for torrent in torrents:						
+		values.append ('[' + str(round((float(torrent["size"]) / (1024*1024*1024)),2)) + 'Gb, ' + torrent["seeds"] + ' Seeds] ' + torrent['name'] )
 	result = xbmcgui.Dialog().select("Torrents", values)			
 	if result==-1:
 		return
-	torrent = ftorrents[result]	
+	torrent = torrents[result]	
 	hashString = transmission.add(_transmissionUrl, torrent['url'], _cookiesRutracker)
 	if _params['id'] not in downloads.keys():
 		downloads.update({_params['id']: {'item': item, 'torrents': {} } })

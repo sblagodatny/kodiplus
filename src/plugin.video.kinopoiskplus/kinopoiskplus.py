@@ -9,6 +9,7 @@ import urllib
 import time
 import sys
 import HTMLParser
+import xbmcgui
 	
 
 def getXCSRF(session):
@@ -161,9 +162,9 @@ def searchByTitle(pathCookies, title, type=None):
 		url = url + 'series/'
 	params = {'text': title}
 	content = pageLoop(session, url, params, 4)
-	result = []
-	titlestrict = title.split(' ')[0].lower()
-	for item in content:
+	result = []	
+	titlestrict = title.split(' ')[0].decode("utf-8").lower()
+	for item in content:		
 		if titlestrict in item['title'].lower() or titlestrict in util.nvl(item['originalTitle'],'').lower():		
 			result.append(item)
 	return result
