@@ -8,6 +8,7 @@ import urllib
 import urllib2
 import urlparse
 import requests
+import google
 
 youtubeUrl = 'https://www.youtube.com/'
 
@@ -15,15 +16,22 @@ youtubeUrl = 'https://www.youtube.com/'
 
 itagsVideo = ['22','18']
 	
-	
-def getMyVideos(pathCookies):
+
+def initSession(pathCookies):
 	session = requests.Session()
 	session.verify = False
 	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	util.setUserAgent(session, 'chrome')
+	return session
+
+	
+def getMyVideos(pathCookies):
+	session = initSession(pathCookies)	
 	result = []
 	content = session.get( youtubeUrl + 'my_videos' + '?' + urllib.urlencode({'o': 'U'})).text		
 	dummy, i = util.substr ('"VIDEO_LIST_DISPLAY_OBJECT"',':',content)	
+	if i is None:
+		return result
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
 		soup = BeautifulSoup(util.unescape(item['html'].decode('utf-8')), "html.parser")	
@@ -63,10 +71,7 @@ def getMyVideos(pathCookies):
 	
 	
 def getMyPlaylists(pathCookies):
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)	
 	result = []
 	soup = BeautifulSoup(session.get( youtubeUrl + 'view_all_playlists').text, "html.parser")
 	for pltag in soup.find_all(class_="playlist-item"):
@@ -82,14 +87,10 @@ def getMyPlaylists(pathCookies):
 
 
 def getSavedPlaylists(pathCookies):
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)	
+	loginInfo = google.getLoginInfo(session)
 	result = []
-	loginInfo = session.cookies._find(name='MyLoginInfo', domain='www.google.com').split('&')
-	channel = loginInfo[1]	
-	content = session.get( youtubeUrl + 'channel/' + channel + '/playlists' + '?' + urllib.urlencode({'sort': 'dd', 'view_as': 'subscriber', 'view': '52', 'shelf_id': '0'})).text
+	content = session.get( youtubeUrl + 'channel/' + loginInfo['channel'] + '/playlists' + '?' + urllib.urlencode({'sort': 'dd', 'view_as': 'subscriber', 'view': '52', 'shelf_id': '0'})).text
 	dummy, i = util.substr ('[{"gridRenderer":{"items"',':',content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))
 	for item in data:
@@ -110,10 +111,7 @@ def getSavedPlaylists(pathCookies):
 
 	
 def searchVideos(searchStr, pathCookies):
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)		
 	result = []
 	content = session.get( youtubeUrl + 'results' + '?' + urllib.urlencode({'search_query': searchStr, 'sp': 'EgIQAVAU'})).text
 	dummy, i = util.substr ('"itemSectionRenderer":{"contents"',':',content)
@@ -124,7 +122,6 @@ def searchVideos(searchStr, pathCookies):
 		content = {
 			'id': item['videoRenderer']['videoId'], 
 			'name': item['videoRenderer']['title']['simpleText'],
-#			'thumb': item['videoRenderer']['thumbnail']['thumbnails'][0]['url'],
 			'thumb': videoImage(item['videoRenderer']['videoId']),
 			'duration': '',
 			'publishedTime': '',
@@ -157,10 +154,7 @@ def videoImage(id):
 	
 	
 def getPlaylistVideos(id, pathCookies):
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)		
 	result = []
 	content = session.get( youtubeUrl + 'playlist' + '?' + urllib.urlencode({'list': id})).text
 	dummy, i = util.substr ('playlistVideoListRenderer":{"contents"',':',content)
@@ -171,7 +165,6 @@ def getPlaylistVideos(id, pathCookies):
 		content = {
 			'id': item['playlistVideoRenderer']['videoId'], 
 			'name': '',
-#			'thumb': item['playlistVideoRenderer']['thumbnail']['thumbnails'][0]['url'],
 			'thumb': videoImage(item['playlistVideoRenderer']['videoId']),
 			'duration': '',
 			'publishedTime': '',
@@ -196,10 +189,7 @@ def getPlaylistVideos(id, pathCookies):
 
 	
 def searchPlaylists(searchStr, pathCookies):
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)		
 	result = []
 	content = session.get( youtubeUrl + 'results' + '?' + urllib.urlencode({'search_query': searchStr, 'sp': 'EgIQA1AU'})).text
 	dummy, i = util.substr ('"itemSectionRenderer":{"contents"',':',content)
@@ -237,10 +227,7 @@ def getCipher(session, player):
 	
 	
 def getStreams(id, pathCookies):	
-	session = requests.Session()
-	session.verify = False
-	util.loadCookies(session, pathCookies)
-	util.setUserAgent(session, 'chrome')	
+	session = initSession(pathCookies)		
 	streams = {}
 	player = getPlayer(session, id)
 	cipher = getCipher(session, player)

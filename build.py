@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.image.gphotos'
-version = '1.5'
+addon = 'plugin.video.youtubeplus'
+version = '1.11'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
