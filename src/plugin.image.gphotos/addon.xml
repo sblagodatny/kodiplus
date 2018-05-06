@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.image.gphotos" version="1.4" name="Google Photos" provider-name="Stas Blagodatny">
+<addon id="plugin.image.gphotos" version="1.5" name="Google Photos" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>

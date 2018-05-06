@@ -5,6 +5,8 @@ import requests
 import util
 import json
 import datetime
+import google
+
 	
 def initSession(pathCookies):
 	session = requests.Session()
@@ -16,6 +18,7 @@ def initSession(pathCookies):
 	
 def getMyAlbums(pathCookies):
 	session = initSession(pathCookies)
+	loginInfo = google.getLoginInfo(session)
 	result = []
 	content = session.get("https://photos.google.com/albums").text
 	dummy, i = util.substr ("key: 'ds:2', isError:  false , hash:","return",content)
@@ -33,7 +36,8 @@ def getMyAlbums(pathCookies):
 			'thumb': row[1][0],
 			'tsStart': datetime.datetime.fromtimestamp(metadata[2][0]/1000),
 			'tsEnd': datetime.datetime.fromtimestamp(metadata[2][1]/1000),
-			'owner': 'Stas Blagodatny', # Change to dynamic,
+			'owner': loginInfo['name'], 
+			'ownerFlag': True,
 			'photosCount': metadata[3],			
 		})	
 #	resultsorted = sorted(result, key=lambda k: k['name'], reverse=True) 	
@@ -41,6 +45,7 @@ def getMyAlbums(pathCookies):
 	
 def getOtherAlbums(pathCookies):
 	session = initSession(pathCookies)
+	loginInfo = google.getLoginInfo(session)
 	result = []
 	content = session.get("https://photos.google.com/sharing").text
 	dummy, i = util.substr ("key: 'ds:1'","return",content)
@@ -48,7 +53,7 @@ def getOtherAlbums(pathCookies):
 	util.objToFile(str(data[0][0]), pathCookies.replace('/cookies','/data.txt'))
 	for row in data[0]:
 		owner = row[10][0][11][0]
-		if owner == 'Stas Blagodatny': ### Change to dynamic
+		if owner == loginInfo['name']:
 			continue
 		result.append({
 			'id': row[6],
@@ -59,7 +64,8 @@ def getOtherAlbums(pathCookies):
 			'tsEnd': None,
 			'photosCount': row[3],
 			'tsCreated': datetime.datetime.fromtimestamp(row[4]/1000),
-			'owner': row[10][0][11][0]
+			'owner': row[10][0][11][0],
+			'ownerFlag': False
 		})	
 	
 	return result
@@ -126,6 +132,7 @@ def getRecent(pathCookies):
 def search(pathCookies, searchStr):
 	result = {'photos': [], 'videos': [], 'albums': []}
 	session = initSession(pathCookies)
+	loginInfo = google.getLoginInfo(session)
 	content = session.get('https://photos.google.com/search/' + searchStr).text	
 	dummy, i = util.substr ("key: 'ds:0', isError:  false , hash:","return",content)
 	data = json.loads(util.parseBrackets(content, i, ['[',']']))	
@@ -140,7 +147,8 @@ def search(pathCookies, searchStr):
 				'id': row[0][2][0],
 				'name': row[2],
 				'thumb': row[1],
-				'owner': 'Stas Blagodatny',
+				'owner': loginInfo['name'],
+				'ownerFlag': True,
 				'photosCount': 5,
 				'sharedKey': None
 		})	
@@ -160,11 +168,9 @@ def getPeople(pathCookies):
 			continue
 		id = row[4][0]
 		result.append({
-			'id': row[4][0],
+			'id': row[8],
 			'name': row[1],
 			'thumb': row[2]
 		})	
 	return result
 
-#_cAF1QipMy~ugBv8l5HZ2Azk2YClcx11-lpQ0SaRdo_Света >> url
-#AF1QipMy_gBv8l5HZ2Azk2YClcx11-lpQ0SaRdo >> id

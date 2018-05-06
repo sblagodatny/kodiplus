@@ -84,8 +84,7 @@ def listPersons(persons):
 		item.setArt({'thumb': data["thumb"], 'poster': data["thumb"], 'fanart': data["thumb"]})			
 		params = {
 			'handler': 'SearchResults',
-#			'searchStr': '_c' + data['id'] + '_' + data["name"]
-			'searchStr': data["name"]
+			'searchStr': '_c' + data['id'].replace('_','~u') + '_' + data['name']
 		}						
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=item)		
 		
@@ -164,8 +163,8 @@ def handlerRoot():
 	rootLinks = [		
 		{'name': 'Недавние', 'urlParams': {'handler': 'Recent'}, 'icon': pathImg+'Recent.png'},
 		{'name': 'Мои Альбомы', 'urlParams': {'handler': 'MyAlbums'}, 'icon': pathImg+'MyAlbums.png'},
-		{'name': 'Другие Альбомы', 'urlParams': {'handler': 'OtherAlbums'}, 'icon': pathImg+'OtherAlbums.png'},
-		{'name': 'Лица', 'urlParams': {'handler': 'People'}, 'icon': pathImg+'Search.png'},
+		{'name': 'Другие Альбомы', 'urlParams': {'handler': 'OtherAlbums'}, 'icon': pathImg+'OtAlbums.png'},
+		{'name': 'Лица', 'urlParams': {'handler': 'People'}, 'icon': pathImg+'People.png'},
 		{'name': 'Поиск', 'urlParams': {'handler': 'Search', 'handlerRedirect': 'SearchResults'}, 'icon': pathImg+'Search.png'}		
 	]
 	for rootLink in rootLinks:
