@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.image.gphotos'
-version = '1.4'
+addon = 'plugin.program.google'
+version = '1.1'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
