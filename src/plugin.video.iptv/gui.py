@@ -15,7 +15,13 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 
 	def __init__(self, playlistFile, epgFile, iconsFolder, timezone):
 		super(DialogEPG, self).__init__('IPTV')
-		self.setGeometry(1000, 700, 3, 3)
+		self.setGeometry(1150, 600, 3, 3)
+		
+		self.timezone = timezone
+		self.channels = util.m3uChannels(playlistFile)
+		self.epg = util.xmltvParse(epgFile,self.timezone)
+		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
+		self.connect(pyxbmct.ACTION_PREVIOUS_MENU, self.close)
 		self.connectEventList([ 
 			pyxbmct.ACTION_MOVE_DOWN,
 			pyxbmct.ACTION_MOVE_UP,
@@ -23,11 +29,6 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 			pyxbmct.ACTION_MOUSE_WHEEL_UP,
 			pyxbmct.ACTION_MOUSE_MOVE],
             self.handleEvent)
-		
-		
-		self.timezone = timezone
-		self.channels = util.m3uChannels(playlistFile)
-		self.epg = util.xmltvParse(epgFile,self.timezone)
 		
 		
 		### Setup channels list ###

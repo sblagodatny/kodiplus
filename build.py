@@ -8,7 +8,7 @@ import sys
 
 
 addon = 'plugin.video.iptv'
-version = '1.11'
+version = '1.12'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
