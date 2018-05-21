@@ -7,6 +7,11 @@ import xbmcvfs
 from bs4 import BeautifulSoup
 import xbmcgui
 import xbmc
+import os
+import HTMLParser	
+from pytz import timezone
+import datetime
+
 
 
 
@@ -50,17 +55,26 @@ def escape(str):
 		.replace('"', "&quot;")
 		.replace('/', '\/')
         )
+
+_htmlEscape = {
+	"&amp;": "&",
+	"&lt;": "<",
+	"&gt;": ">",
+	"&#39;": "'",
+	"&quot;": '"',
+	"\/": '/',
+	"&thinsp;": ' ',
+	"&ndash;": '-'
+}
 		
 def unescape(str):
-    return (str
-        .replace("&amp;","&")
-		.replace("&lt;","<")
-		.replace("&gt;",">")
-        .replace("&#39;","'")
-		.replace("&quot;",'"')
-		.replace("\/",'/')
-        )		
+	return(HTMLParser.HTMLParser().unescape(nvl(str,'')))
 		
+def unsecapelist(list):
+	result = []
+	for l in list:
+		result.append(unescape(l))
+
 	
 def timeStrToSeconds (str):
 	format = '%H:%M:%S'
@@ -93,8 +107,14 @@ def nvls(str, nullvalue):
 def color(str, color):
 	return '[COLOR ' + color + ']' + str + '[/COLOR]'
 	
+def uncolor(str, color):
+	return str.replace('[COLOR ' + color + ']','').replace('[/COLOR]','')
+	
 def bold(str):
 	return '[B]' + str + '[/B]'
+	
+def unbold(str):
+	return str.replace('[B]','').replace('[/B]','')
 	
 	
 	
@@ -162,79 +182,45 @@ def listToStr(list, delimiter):
 	return result	
 
 	
-### HTTP Utilities ###	
-	
-class Session (requests.Session):
-	_userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
-	def __init__(self, cookiesFolder = '.'):
-		requests.Session.__init__(self)	
-		requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
-		self.verify = False
-		self.headers.update({
-			'User-Agent': self._userAgent,
-		})
-		self.cookiesFolder = cookiesFolder
-		self.xbmc = xbmc
-		cookies = self.cookies
-		self.cookies = fileToObj(cookiesFolder + '/cookies')
-		if self.cookies is None:
-			self.cookies = cookies
-	def saveCookies(self):
-		objToFile(self.cookies, self.cookiesFolder + '/cookies')
-	def download(self, url, path):
-		output = fopen(path, 'w')
-		r = self.get(url)
-		for chunk in r.iter_content(chunk_size=1024): 
-			if chunk:
-				output.write(chunk)
-		output.close()
-	def setCookie(self, domain, name, value, doSave = False):
-		args = {
-			'domain': domain,
-			'expires': None,
-			'path': '/',
-			'version':0
-		}
-		self.cookies.set(name=name, value=value, **args)
-		if doSave:
-			self.saveCookies()
+### Requests Utilities ###	
 
-		
-def urldecode(params):	
-	result = {}
-	for kv in params.split("&"):
-		key, value = kv.split("=")
-		result.update({key: value})	
-	return (result)
+def setUserAgent(session, agent):
+	agents = {
+		'chrome': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
+		'firefox': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'
+	}
+	session.headers['User-Agent'] = agents[agent]
+
+def saveCookies(session, path):
+	objToFile(session.cookies, path)
 	
-def urlencode(params):
-	result = ''
-	for key in params.keys():
-		result = result + key + '=' + params[key] + '&'
-	return(result[:-1])
+def loadCookies(session, path):
+	if os.path.isfile(path):
+		session.cookies = fileToObj(path)
+
+def setCookie(session, domain, name, value):
+	args = {
+		'domain': domain,
+		'expires': None,
+		'path': '/',
+		'version':0
+	}
+	session.cookies.set(name=name, value=value, **args)
+
+def headerCookie(cookiesdict):
+	headers = {'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookiesdict.items()])}	
+	return headers
 	
 
 	
 ### Date Utilities ###
-class timezone(datetime.tzinfo):
-	_offset = None
-	_dst = None
-	def __init__(self, seconds=0):
-		self._offset = datetime.timedelta(seconds = seconds)
-		self._dst = datetime.timedelta(0)
-	def utcoffset(self, dt):
-		return self._offset
-	def dst(self, dt):
-		return self._dst
-
-def strToDateTime(str):
-	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10]), minute=int(str[10:12]), tzinfo=timezone(int(str[15:18]) * 3600) )
-
-def now():
-	offset = 2
-	str = datetime.datetime.strftime(datetime.datetime.now(),'%Y%m%d%H%M')
-	return datetime.datetime(year=int(str[0:4]), month=int(str[4:6]), day=int(str[6:8]), hour=int(str[8:10]), minute=int(str[10:12]), tzinfo=timezone(offset * 3600) )
-
+def parseDateTimeUTC(str):
+	t = datetime.datetime.fromtimestamp(time.mktime(time.strptime(str[0:14], "%Y%m%d%H%M%S")))
+	offset = int(str[15:18])
+	t = t - datetime.timedelta(hours=offset)
+	return t
+	
+	
 ### Other ###
 def m3uChannels(m3uFile):	
 	channels = []
@@ -265,28 +251,18 @@ def m3uChannels(m3uFile):
 			channels.append(channel)
 	f.close()
 	return channels
-
-
-def xmltvGetCurrent(epg, tvg_id, tvg_shift):
-	n = now()
-	if tvg_shift is not None:	
-		n = n + datetime.timedelta(hours=int(tvg_shift))
-	for program in epg[tvg_id]:
-		if n >= program['start'] and n < program['stop']:
-			program.update({'remaining': program['stop']-n})
-			return program	
-	return None			
 	
 	
-def xmltvParse(epgFile):
+def xmltvParse(epgFile,localtz):
+	tz=timezone(localtz)
 	epg = {}
 	f = xbmcvfs.File (epgFile, 'r')
 	data = f.read()
 	f.close()
 	data = BeautifulSoup(data, "html.parser")
 	for program in data.find_all('programme'):
-		start = strToDateTime(program['start'])
-		stop = strToDateTime(program['stop'])
+		start = tz.fromutc(parseDateTimeUTC(program['start']))
+		stop = tz.fromutc(parseDateTimeUTC(program['stop']))
 		if program['channel'] not in epg.keys():
 			epg.update({program['channel']:[]})
 		epg[program['channel']].append({
@@ -326,4 +302,3 @@ def play(url, title, headers=None):
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	stdout, stderr = p.communicate()
 #	xbmcgui.Dialog().ok('Player', stdout, stderr)
-
