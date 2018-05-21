@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.program.epgscrapper" version="1.6" name="EPG Scrapper" provider-name="Stas Blagodatny">
+<addon id="plugin.program.epgscrapper" version="1.7" name="EPG Scrapper" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.11"/>
   <import addon="script.module.requests"/>
   <import addon="script.module.beautifulsoup4"/>
+  <import addon="script.module.pytz" />
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>executable</provides>

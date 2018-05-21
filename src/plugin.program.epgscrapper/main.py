@@ -38,17 +38,24 @@ def handlerRoot():
 			if 'tvg_id' not in channel.keys():
 				continue
 			xbmc.executebuiltin('Notification(%s, %s, %d, %s)'%(_addon.getAddonInfo('name'),channel['name'], 1, _addon.getAddonInfo('icon')))
-			f.write('<channel id="' + channel['tvg_id'] + '" ><display-name>' + channel['name'].encode('utf-8') + '</display-name></channel>' + "\n")
 			scrapper = getattr(__import__('scrappers'), 'getEpg' + channel['tvg_id'].split('_')[0])			
+			programs = None
 			for i in range (0,3):
 				try:
 					programs = scrapper(channel['tvg_id'].split('_')[1], _epgDays)
 					break
 				except:
 					None
+			if programs is None:
+				continue
+			f.write('<channel id="' + channel['tvg_id'] + '" ><display-name>' + channel['name'].encode('utf-8') + '</display-name></channel>' + "\n")
 			for program in programs:
 				start = program['start']
 				stop = program['stop']
+				if 'tvg_shift' in channel.keys():
+					shift = datetime.timedelta(hours=int(channel['tvg_shift']))
+					start = start + shift
+					stop = stop + shift
 				sstart = datetime.datetime.strftime(start,'%Y%m%d%H%M%S %z')
 				sstop = datetime.datetime.strftime(stop,'%Y%m%d%H%M%S %z')
 				f.write('<programme id="' + str(pid) + '" start="' + sstart + '" stop="' + sstop + '" channel="' + channel['tvg_id'] + '" >' + "\n")

@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.iptv'
-version = '1.12'
+addon = 'plugin.program.epgscrapper'
+version = '1.7'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
