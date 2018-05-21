@@ -77,9 +77,12 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 		tvg_id = self.channels[self.selectedChannel]['tvg_id']	
 		self.listPrograms.reset()
 		now = datetime.now(timezone(self.timezone))
+		self.deletedPrograms = 0
 		for program in self.epg[tvg_id]:
 			if now < program['stop']:
-				self.listPrograms.addItem(program['start'].strftime("%H:%M") + '  ' + program['title'])			
+				self.listPrograms.addItem(program['start'].strftime("%H:%M") + '  ' + program['title'])
+			else:
+				self.deletedPrograms = self.deletedPrograms + 1
 		self.selectedProgram=None
 		self.selectProgram()	
 		
@@ -92,8 +95,9 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 			self.selectedProgram=0
 		self.select(self.listPrograms.getListItem(self.selectedProgram))
 		tvg_id = self.channels[self.selectedChannel]['tvg_id']
-		program = self.epg[tvg_id][self.selectedProgram]
+		program = self.epg[tvg_id][self.selectedProgram + self.deletedPrograms]
 		self.textboxDescription.setText(program['description'])
+		
 	
 	def play(self):
 		channel = self.channels[self.selectedChannel]
