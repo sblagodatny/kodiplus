@@ -276,7 +276,16 @@ def xmltvParse(epgFile,localtz):
 		
 		
 ### External Player ###
-def play(url, title, headers=None):
+def play(url, title, headers=None, forceKodiPlayer=False):
+	if forceKodiPlayer:
+		item = xbmcgui.ListItem(title)
+		murl = url
+		if headers is not None:
+			murl = murl + '|'
+			for header, value in headers.iteritems():
+				murl = murl + header + '=' + value + '&'
+		xbmc.Player().play(murl, item)
+		return
 	if xbmc.getCondVisibility('system.platform.android'):
 		cmd=[
 			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',

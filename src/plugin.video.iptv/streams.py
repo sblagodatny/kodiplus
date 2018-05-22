@@ -21,11 +21,10 @@ def getKeshetStream():
 	data = s.get(url=url, headers=headers)
 	cookies = s.cookies.get_dict()
 	headers.update({'Cookie': "; ".join([str(x)+"="+str(y) for x,y in cookies.items()])}),
-	url = 'https://keshethlslive-i.akamaihd.net/hls/live/512033-b/CH2LIVE_HIGH/index_2200.m3u8'	
+	url = 'https://keshethlslive-i.akamaihd.net/hls/live/512033/CH2LIVE_HIGH/index_850.m3u8'
 	return url, headers
 
-	
 def getReshetStream():
-	url = 'http://besttv10.aoslive.it.best-tv.com/reshet/studio/index_4.m3u8'
+	url = 'http://besttv10.aoslive.it.best-tv.com/reshet/studio/index_2.m3u8'
 	headers = {'Referer':'http://reshet.tv/live/'}
 	return (url, headers)

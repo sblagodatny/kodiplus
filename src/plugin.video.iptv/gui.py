@@ -74,8 +74,13 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 			self.unselect(self.listChannels.getListItem(self.selectedChannel))
 		self.selectedChannel = self.listChannels.getSelectedPosition()
 		self.select(self.listChannels.getListItem(self.selectedChannel))
-		tvg_id = self.channels[self.selectedChannel]['tvg_id']	
 		self.listPrograms.reset()
+		self.textboxDescription.setText(' ')
+		if 'tvg_id' not in self.channels[self.selectedChannel].keys():
+			return		
+		tvg_id = self.channels[self.selectedChannel]['tvg_id']	
+		if tvg_id not in self.epg.keys():
+			return
 		now = datetime.now(timezone(self.timezone))
 		self.deletedPrograms = 0
 		for program in self.epg[tvg_id]:
@@ -108,5 +113,6 @@ class DialogEPG(pyxbmct.AddonDialogWindow):
 		if channel['name'] == 'רשת':
 			url, headers = streams.getReshetStream()
 		util.play(url,channel['name'],headers)
+	
 		
 		
