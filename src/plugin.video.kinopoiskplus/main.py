@@ -257,12 +257,6 @@ def handlerMonitorTorrent():
 
 def handlerRemoveTorrent():
 	transmission.remove(_transmissionUrl, _params['hashString'], True)
-	downloads = getDownloads()
-	hashString = _params['hashString']
-	del downloads[_params['id']]['torrents'][_params['hashString']]
-	if not downloads[_params['id']]['torrents']:
-		del downloads[_params['id']]
-	setDownloads(downloads)
 	xbmc.executebuiltin('Container.Refresh')
 	
 	
