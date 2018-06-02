@@ -12,21 +12,15 @@ import HTMLParser
 import xbmcgui
 	
 
-def getXCSRF(session):
-	loginInfo = getUserDetails(session)
-	if loginInfo is not None:
-		return loginInfo['xcsrf']
-	data = BeautifulSoup(session.get('https://plus.kinopoisk.ru/').content, "html.parser")
-	data = data.find(class_="i-bem")['data-bem']
-	if 'csrf' not in data:
-		raise Exception('Robot protection')
-	xcsrf = json.loads(data)['page']['csrf']	
-	return xcsrf
 
-	
 def login(pathCookies, user, password):						
 	session=initSession()	
-	xcsrf = getXCSRF(session)		
+	## Step 1 ##
+	data = {'retPath': 'https://www.kinopoisk.ru'}
+	content = BeautifulSoup(session.get('https://plus.kinopoisk.ru/embed/login/', data=data).content, "html.parser")
+	data = json.loads(content.find(class_="i-bem")['data-bem'])
+	xcsrf = data['page']['csrf']
+	## Step 2 ##
 	session.headers['X-CSRF-Token']=xcsrf
 	session.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8'
 	session.headers['X-Requested-With']='XMLHttpRequest'
@@ -34,6 +28,7 @@ def login(pathCookies, user, password):
 	reply = json.loads(session.post("https://plus.kinopoisk.ru/user/resolve-by-password", data=data).content)
 	if reply['status'] != 'ok':
 		raise Exception('Invalid credentials')					
+	## Save ##
 	loginInfo = user + '&' + str(reply['userParams']['uid']) + '&' + str(time.time()) + '&' + xcsrf
 	util.setCookie(session, 'www.kinopoisk.com', 'MyLoginInfo', loginInfo)
 	util.saveCookies(session, pathCookies)
@@ -62,216 +57,88 @@ def initSession(pathCookies=None):
 	session.headers['Accept-Encoding'] = 'gzip, deflate, br'
 	session.headers['Accept-Language'] = 'en-US,en;q=0.9,he-IL;q=0.8,he;q=0.7,ru-RU;q=0.6,ru;q=0.5'
 	session.headers['Upgrade-Insecure-Requests'] = '1'
-	session.headers['Referer'] = 'https://plus.kinopoisk.ru/'
+	session.headers['Referer'] = 'https://www.kinopoisk.ru/'
 	return session
 
 
+
+def getFolders(pathCookies):
+	session = initSession(pathCookies)	
+	data = BeautifulSoup(session.get('https://www.kinopoisk.ru/mykp/movies/').content, "html.parser").find('ul',{'id': 'folderList'})
+	result = {}
+	for tag in data.find_all('li'):
+		id = tag['data-id']
+		name = tag.find('a')
+		if name is None:
+			name = tag.find('span')
+		name = name.get_text()
+		if ' (' in name:
+			name = name.split(' (')[0]
+		result.update({id: name})		
+	return result
+
 	
-		
-def parseContent(content):
+def getFolderContent(pathCookies, folder):
+	session = initSession(pathCookies)	
+	data = BeautifulSoup(session.get('https://www.kinopoisk.ru/mykp/movies/list/type/' + folder + '/').content, "html.parser").find('ul',{'id': 'itemList'})
 	result = []
-	if 'captcha' in content:
-		return result
-	data, dummy = util.substr("window._state = '","'",content)
-	data = urllib.unquote(data).replace('%','\\').decode('unicode-escape').encode('utf8')
-	data = json.loads(data)
-	for d in data['movies'].values():	
-		if 'rating' not in d['ratingData'].keys():
-			continue
-		try:
-			rating = float(d['ratingData']['rating']['rate'])
-			if rating < 1:
-				continue
-		except:
-			continue
-		row = {
-			'id': d['id'],
-			'type': d['type'], # SHOW/MOVIE
-			'title': util.unescape(d['title']),
-			'originalTitle': None,
-			'year': util.unescape(d['year']),
-			'favorite': d['favorite'], # Boolean
-			'rate': d['ratingData']['rating']['rate'],
-			'watched': None,
-			'genres': [f['name'] for f in d['genres']],
-			'countries': d['countries']
-		}
-		originalTitle = util.unescape(d['originalTitle'])
-		if len(originalTitle) > 0 and originalTitle != row['title']:
-			row['originalTitle'] = originalTitle	
-		row['myrate'] = '12345'
-		if 'myRate' in d['ratingData'].keys():
-			row['watched'] = d['ratingData']['myRate']['date'][0:10]					
-		result.append(row)			
+	for tag in data.find_all('li'):	
+		info = tag.find(class_='info').findAll('span')
+		item = {
+			'id': tag['data-id'],
+			'type': 'MOVIE', # SHOW/MOVIE
+			'title': cleanseTitle(tag.find(class_='name').get_text()),
+			'originalTitle': info[0].get_text().split('(')[0].strip(),
+			'year': info[0].get_text().split('(')[-1].split(')')[0],			
+			'rate': tag.find(class_='kpRating').find('span').get_text().split(' ')[0],
+			'watched': False,
+			'genres': info[2].get_text().replace('(','').replace(')',''),
+			'countries': info[1].get_text().split('реж.')[0].replace(',','').replace("\n",'').replace(' ','')
+		}	
+		if ' (сериал)' in item['title']:
+			item['title'] = item['title'].replace(' (сериал)','')
+			item['type'] = 'SHOW'
+		myrating = tag.find(class_='vote_widget').find_next().get_text().split("rating: '")[1].split("'")[0]	
+		if myrating != '':
+			item['watched'] = True
+		result.append(item)	
+		if len(item['originalTitle'])==0:
+			item['originalTitle'] = None
+	return result	
+
+	
+	
+def cleanseTitle(name):
+	result = name
+	result = result.replace(' (видео)','')
+	result = result.replace(' (ТВ)','')
+	result = result.replace(' (мини-сериал)',' (сериал)')
 	return result
-
-def pageLoop(session, url, params, pages):
-	result = []
-	p = params
-	for page in range(1,pages+1):
-		p['page']=page
-		content = parseContent(session.get(url=url, params=p).content)
-		result = result + content
-		if len(content)<9:
-			break
-	return result
-	
-def getFavorites(pathCookies):
-	session = initSession(pathCookies)
-	url = 'https://plus.kinopoisk.ru/user/' + getUserDetails(session)['uid'] + '/favorites/'	
-	return pageLoop(session, url, {}, 4)	
-
-	
-def setFavorites(pathCookies, id, favorites):
-	session = initSession(pathCookies)
-	xcsrf = getXCSRF(session)
-	session.headers['X-CSRF-Token']=xcsrf
-	session.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8'
-	session.headers['X-Requested-With']='XMLHttpRequest'
-	if favorites:
-		url = 'https://plus.kinopoisk.ru/favorites/add/'
-	else:
-		url = 'https://plus.kinopoisk.ru/favorites/delete/'
-	params = {'movieId': id}
-	reply = session.post(url=url,data=params).status_code
-	if reply != 200:
-		raise Exception('Unable to set favorites')
-	
-
-def setWatched(pathCookies, id, watched):
-	session = initSession(pathCookies)
-	xcsrf = getXCSRF(session)
-	session.headers['X-CSRF-Token']=xcsrf
-	session.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8'
-	session.headers['X-Requested-With']='XMLHttpRequest'		
-	if watched:
-		url = 'https://plus.kinopoisk.ru/film/' + id + '/rates/update/'
-	else:
-		url = 'https://plus.kinopoisk.ru/film/' + id + '/rates/delete/'
-	reply = session.post(url=url).status_code
-	if reply not in [200,201]:
-		raise Exception('Unable to set watched')
-	
-		
-def searchByTitle(pathCookies, title, type=None):
-	session = initSession(pathCookies)
-	url = 'https://plus.kinopoisk.ru/search/'
-	if type == 'MOVIE':
-		url = url + 'films/'
-	if type == 'SHOW':
-		url = url + 'series/'
-	params = {'text': title}
-	content = pageLoop(session, url, params, 4)
-	result = []	
-	titlestrict = title.split(' ')[0].decode("utf-8").lower()
-	for item in content:		
-		if titlestrict in item['title'].lower() or titlestrict in util.nvl(item['originalTitle'],'').lower():		
-			result.append(item)
-	return result
-
-
-def getSeasons(pathCookies,id):
-	session = initSession(pathCookies)
-	session.headers['X-Requested-With']='XMLHttpRequest'
-	session.headers['Referrer']='https://plus.kinopoisk.ru/film/' + id + '/details/series'
-	seasons = {}
-	for i in range (1,15):	
-		reply = session.get('https://plus.kinopoisk.ru/film/' + id + '/details/series/s' + str(i) + '/')
-		if  reply.status_code != 200:
-			break
-		if 'captcha' in reply.content:
-			return None
-		data=json.loads(reply.content)
-		data = data['content']
-		if 'button_state_release' in data:
-			watched = False
-		else:
-			watched = True
-		seasons.update({i: watched})
-	return seasons
-	
-	
-def setSeasonWatched(pathCookies, id, season, state):	
-	session = initSession(pathCookies)
-	xcsrf = getXCSRF(session)
-	session.headers['X-CSRF-Token']=xcsrf
-	session.headers['X-Requested-With']='XMLHttpRequest'
-	session.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8'
-	session.headers['Referrer']='https://plus.kinopoisk.ru/film/' + id + '/details/series/s' + str(season) + '/'
-	url = 'https://plus.kinopoisk.ru/serials/' + id + '/views/'
-	if state:
-		url = url + 'seen/all/'
-	else:
-		url = url + 'unseen/all/'	
-	data = {'seasonNum': str(season)}
-	reply = session.post(url, data = data).status_code
-	if reply not in [200,201]:
-		raise Exception('Unable to set season watched')
-		
 
 		
-def getCast(soap, role):
-	result = []
-	data = soap.find("div", class_="kinoisland__title", string=role)
-	if data is None:
-		return result
-	data = data.find_next()
-	for tag in data.find_all(class_ = "person"):
-		try:
-			thumbnail = 'https:' + tag.find(class_='person__photo-image')['srcset'].split(' ')[0]
-		except:
-			thumbnail = None	
-		result.append({
-			'name': tag.find(class_="person__info-name")['content'],
-			'role': role,
-			'thumbnail': thumbnail
-		})	
-	return result
-	
 def getDetails(pathCookies, id):
 	session = initSession(pathCookies)
-	url = 'https://plus.kinopoisk.ru/film/' + id + '/details/cast/'
+	url = 'https://www.kinopoisk.ru/film/' + id
 	soap = BeautifulSoup(session.get(url=url).content, "html.parser")	
 	result = {
-		'description': soap.find('div',{'itemprop': 'description'}).get_text(),
-		'actors': getCast(soap, 'Актёр'),
-		'directors': getCast(soap, 'Режиссёр')
+		'description': soap.find(class_='film-synopsys').get_text()
 	}
 	return result
 	
 	
+def getCast(pathCookies, id, role):
+	session = initSession(pathCookies)
+	data = BeautifulSoup(session.get('https://www.kinopoisk.ru/film/' + id + '/cast/who_is/' + role + '/').content, "html.parser")
+	result = []
+	for tag in data.find_all(class_='actorInfo'):
+		person = tag.find(class_='name').find('a').get_text()
+		photo = 'https://www.kinopoisk.ru/' + tag.find(class_='photo').find('img')['title']
+		result.append({'name': person, 'role': role, 'thumbnail': photo}) 
+	return result
+		
 	
 	
-def getRecommended(pathCookies, criteria):	
-	session = initSession(pathCookies)	
-	url = 'https://plus.kinopoisk.ru/catalogue/?advanced=1'
-	for filter in criteria:
-		for value in filter['values']:
-			url = url + '&' + filter['param'] + '=' + value
-	return pageLoop(session, url, {}, 3)	
-
 	
-	
-def getRecommendedCriteria(pathCookies):
-	session = initSession(pathCookies)	
-	params = {'advanced': 1}
-	url = 'https://plus.kinopoisk.ru/catalogue/'
-	soap = BeautifulSoup(session.get(url=url, params=params).content, "html.parser")	
-	filters = [
-		{'name': 'what', 'displayName': 'Что', 'param': 'what', 'multiple': False, 'values': []}, 
-		{'name': 'genres', 'displayName': 'Жанры', 'param': 'genres', 'multiple': True, 'values': []}, 
-		{'name': 'countries', 'displayName': 'Страны', 'param': 'countries', 'multiple': True, 'values': []}, 
-		{'name': 'tags0', 'displayName': 'Тэги', 'param': 'tags', 'multiple': True, 'values': []} 
-	]
-	for tag in soap.find_all(class_='select__select'):
-		for i in range (0, len(filters)):
-			if filters[i]['name'] == tag['name']:
-				for otag in tag.find_all(class_="select__select-option"):
-					if otag['value'] not in filters[i]['values']:
-						filters[i]['values'].append(otag['value'])
-	return filters
-	
-
 	
 def getThumb(id):
 	return 'https://www.kinopoisk.ru/images/sm_film/' + id + '.jpg'
