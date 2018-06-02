@@ -9,6 +9,7 @@ import requests
 # Transmission URL: http://127.0.0.1:9091/transmission/rpc
 def send (url, data):
 	session = requests.Session()
+	session.verify = False
 	reply = session.post(url)
 	sid = reply.headers['X-Transmission-Session-Id']
 	session.headers.update({'X-Transmission-Session-Id': sid})
@@ -63,8 +64,10 @@ def add (url, torrentUrl, pathCookies):
 		"arguments": {"metainfo": encoded_string}
 	}
 	reply = send(url,data)
+	if 'torrent-duplicate' in reply["arguments"].keys():
+		return reply["arguments"]["torrent-duplicate"]["hashString"]
 	return reply["arguments"]["torrent-added"]["hashString"]
-	
+
 
 
 def modify(url, hashString, data):

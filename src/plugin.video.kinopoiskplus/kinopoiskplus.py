@@ -132,8 +132,12 @@ def getCast(pathCookies, id, role):
 	result = []
 	for tag in data.find_all(class_='actorInfo'):
 		person = tag.find(class_='name').find('a').get_text()
-		photo = 'https://www.kinopoisk.ru/' + tag.find(class_='photo').find('img')['title']
-		result.append({'name': person, 'role': role, 'thumbnail': photo}) 
+		photo = None
+		try:
+			photo = 'https://www.kinopoisk.ru/' + tag.find(class_='photo').find('img')['title']
+		except:
+			None
+		result.append({'name': person, 'thumbnail': photo, 'role': role}) 
 	return result
 		
 	

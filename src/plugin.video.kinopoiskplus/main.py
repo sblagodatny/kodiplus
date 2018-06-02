@@ -205,7 +205,7 @@ def handlerAddTorrent():
 	cache =	util.fileToObj(_path + '/cache')
 	item = cache[_params['id']]
 	torrents = []	
-	directors = kinopoiskplus.getCast(_cookiesKinopoisk, _params['id'], 'Режиссеры')
+	directors = kinopoiskplus.getCast(_cookiesKinopoisk, _params['id'],'director')
 	downloads = getDownloads()
 	dtorrents = []
 	if _params['id'] in downloads.keys():
@@ -325,10 +325,7 @@ def handlerInfo():
 	li = xbmcgui.ListItem(title)	
 	li.setArt({'thumb': kinopoiskplus.getThumb(_params['id']), 'poster': kinopoiskplus.getPoster(_params['id']), 'fanart': kinopoiskplus.getPoster(_params['id'])})
 	li.setInfo( type="Video", infoLabels=infoLabels )		
-#	li.setCast(
-#		kinopoiskplus.getCast(_cookiesKinopoisk, _params['id'], 'Актеры') + 
-#		kinopoiskplus.getCast(_cookiesKinopoisk, _params['id'], 'Режиссеры')
-#	)
+	li.setCast(kinopoiskplus.getCast(_cookiesKinopoisk, _params['id'],'actor'))
 	dialog = xbmcgui.Dialog()
 	ret = dialog.info(li)
 

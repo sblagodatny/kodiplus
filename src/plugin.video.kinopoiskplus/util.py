@@ -152,7 +152,16 @@ def nvld(data, key, nullvalue):
 		return(data[key])
 	return nullvalue
 
-
+### Soap utilities ###
+def tagPrevious(tag):
+	from bs4 import element
+	prev = tag
+	while True:
+		prev = prev.previous
+		if isinstance(prev, element.Tag):
+			break
+	return prev
+			
 	
 ### List utilities ###
 
