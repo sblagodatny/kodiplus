@@ -78,8 +78,6 @@ def listContent(content, folder=-1):
 		name = item['title']
 		if item['type'] == 'SHOW':
 			name = name + ' (сериал)'
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Seasons', 'id': item['id']}) + ')'
-			contextMenuItems.append(('Сезоны',contextCmd))		
 		infoLabels = {}	
 		plot = ''
 		if item['originalTitle'] is not None:
@@ -287,21 +285,14 @@ def handlerListTorrents():
 	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=item)
 	xbmcplugin.endOfDirectory(_handleId)
 
-	
-
-def handlerSetFavorites():
-	kinopoiskplus.setFavorites(_cookiesKinopoisk, _params['id'], eval(_params['favorite']))
-	updateDownloads(_params['id'],{'favorite': eval(_params['favorite'])})
-	xbmc.executebuiltin('Container.Refresh')
 
 	
 def handlerSetWatchedKinopoisk():
 	kinopoiskplus.setWatched(_cookiesKinopoisk, _params['id'], eval(_params['watched']))
 	if eval(_params['watched']):
-		watched = str(datetime.datetime.today())
-		updateDownloads(_params['id'],{'watched': str(datetime.datetime.today())[0:10], 'favorite': False})
+		updateDownloads(_params['id'],{'watched': True})
 	else:
-		updateDownloads(_params['id'],{'watched': None})
+		updateDownloads(_params['id'],{'watched': False})
 	xbmc.executebuiltin('Container.Refresh')	
 	
 	
@@ -320,6 +311,10 @@ def handlerInfo():
 	if item['originalTitle'] is not None:
 		title = title + ' / ' + item['originalTitle']
 	details = kinopoiskplus.getDetails(_cookiesKinopoisk, _params['id'])
+	
+	if 'seasons' in details.keys():
+		title = title + ' [' + str(details['seasons']) + ']'
+	
 	infoLabels = {}
 	infoLabels['plot'] = details['description']
 	li = xbmcgui.ListItem(title)	
@@ -330,26 +325,26 @@ def handlerInfo():
 	ret = dialog.info(li)
 
 	
-def handlerSeasons():
-	data = kinopoiskplus.getSeasons(_cookiesKinopoisk, _params['id'])
-	seasons = sorted(data.keys())
-	values = []
-	selected = []
-	for i in range(0, len(seasons)):
-		values.append('Сезон ' + str(seasons[i]))
-		if data[seasons[i]]:
-			selected.append(i)
-	selectedNew = xbmcgui.Dialog().multiselect("Просмотренные Сезоны", values, preselect=selected)
-	if selectedNew is None:
-		return	
-	xbmc.executebuiltin( "ActivateWindow(busydialog)" )
-	for i in selectedNew:
-		if i not in selected:
-			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], True)
-	for i in selected:
-		if i not in selectedNew:
-			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], False)		
-	xbmc.executebuiltin( "Dialog.Close(busydialog)" )
+#def handlerSeasons():
+#	data = kinopoiskplus.getSeasons(_cookiesKinopoisk, _params['id'])
+#	seasons = sorted(data.keys())
+#	values = []
+#	selected = []
+#	for i in range(0, len(seasons)):
+#		values.append('Сезон ' + str(seasons[i]))
+#		if data[seasons[i]]:
+#			selected.append(i)
+#	selectedNew = xbmcgui.Dialog().multiselect("Просмотренные Сезоны", values, preselect=selected)
+#	if selectedNew is None:
+#		return	
+#	xbmc.executebuiltin( "ActivateWindow(busydialog)" )
+#	for i in selectedNew:
+#		if i not in selected:
+#			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], True)
+#	for i in selected:
+#		if i not in selectedNew:
+#			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], False)		
+#	xbmc.executebuiltin( "Dialog.Close(busydialog)" )
 	
 
 
@@ -490,7 +485,7 @@ def handlerRoot():
 	rootLinks = [		
 		{'name': 'Загрузки', 'urlParams': {'handler': 'Downloads'}, 'icon': pathImg+'Downloads.png'},
 		{'name': 'Избранное', 'urlParams': {'handler': 'Folders'}, 'icon': pathImg+'Folders.png'},
-#		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': pathImg+'Search.png'},
+		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': pathImg+'Search.png'},
 #		{'name': 'Рекоммендация', 'urlParams': {'handler': 'Recommendation'}, 'icon': pathImg+'Recommendation.png'}
 	]
 	for rootLink in rootLinks:

@@ -41,7 +41,7 @@ def getUserDetails(session):
 			'user': loginInfo[0],
 			'uid': loginInfo[1],
 			'ts': float(loginInfo[2]),
-			'xcsrf': loginInfo[3]
+			'xcsrftoken': loginInfo[3]
 		})
 	except:
 		return None	
@@ -101,11 +101,70 @@ def getFolderContent(pathCookies, folder):
 		myrating = tag.find(class_='vote_widget').find_next().get_text().split("rating: '")[1].split("'")[0]	
 		if myrating != '':
 			item['watched'] = True
-		result.append(item)	
 		if len(item['originalTitle'])==0:
 			item['originalTitle'] = None
+		result.append(item)	
 	return result	
 
+
+def searchByTitle(pathCookies, title, type):
+	session = initSession(pathCookies)
+	url = 'https://www.kinopoisk.ru/index.php'
+	params = {
+		'level': '7',
+		'from': 'forma',
+		'result': 'adv',
+		'm_act[from]': 'forma',
+		'm_act[what]': 'content',
+		'm_act[find]': title,
+		'm_act[content_find]': 'film'	
+	}
+	if type == 'SHOW':
+		params['m_act[content_find]'] = 'serial'	
+	data = BeautifulSoup(session.get(url, params=params).content, "html.parser")
+	result = []	
+	for tag in data.find_all(class_="element"):		
+		item = {
+			'id': tag.find(class_="info").find('a')['data-id'],
+			'type': 'MOVIE', # SHOW/MOVIE
+			'title': cleanseTitle(tag.find(class_="name").find('a').get_text()),
+			'originalTitle': None,
+			'year': '',			
+			'rate': '',
+			'watched': False,
+			'genres': '',
+			'countries': ''
+		}	
+		if ' (сериал)' in item['title']:
+			item['title'] = item['title'].replace(' (сериал)','')
+			item['type'] = 'SHOW'
+		try:
+			item['year'] = tag.find(class_="year").get_text()
+		except:
+			continue
+		try:
+			item['rate'] = tag.find(class_='rating').get_text()
+		except:
+			continue
+		try:
+			myrating = tag.find(class_='my_vote').get_text()
+			item['watched'] = True
+		except:
+			None
+		try:
+			originalTitle = tag.findAll(class_='gray')[0].get_text()
+			if ',' in originalTitle:
+				item['originalTitle'] = originalTitle.split(',')[0].strip()
+		except:
+			None
+		try:
+			info = tag.findAll(class_='gray')[1].get_text()
+			item['countries'] = info.split('реж')[0].replace(',','').strip()
+			item['genres'] = info.split('(')[1].split(')')[0]
+		except:
+			None
+		result.append(item)									
+	return result	
 	
 	
 def cleanseTitle(name):
@@ -123,6 +182,10 @@ def getDetails(pathCookies, id):
 	result = {
 		'description': soap.find(class_='film-synopsys').get_text()
 	}
+	try:
+		result['seasons'] = int(soap.find('title').get_text().split(' сезон')[0].split(' ')[-1])
+	except:
+		None
 	return result
 	
 	
@@ -149,3 +212,22 @@ def getThumb(id):
 	
 def getPoster(id):
 	return 'https://www.kinopoisk.ru/images/film_big/' + id + '.jpg'
+	
+	
+def setWatched(pathCookies,id,state):		
+	session = initSession(pathCookies)
+	session.headers['X-Requested-With']='XMLHttpRequest'
+	data = {
+		'token': getUserDetails(session)['xcsrftoken'],
+		'id_film': id
+	}		
+	if state:
+		data.update({'act': 'add'})
+	else:
+		data.update({'act': 'delete'})	
+	util.setCookie(session, '.kinopoisk.ru', '_csrf/csrf_token', data['token'])	
+	reply = session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
+	if reply.status_code != 200:
+		raise Exception ('Unable to update Kinopoisk')
+
+		
