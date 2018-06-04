@@ -89,11 +89,11 @@ def listContent(content, folder=-1):
 		plot = plot + util.bold('Страна: ') + item['countries'] + "\n\n"
 		if item['watched']:
 			infoLabels['playcount'] = 1
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'False'}) + ')'
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'False', 'usercode': item['usercode']}) + ')'
 			contextMenuItems.append(('UnWatched',contextCmd))
 		else:
 			infoLabels['playCount'] = 0
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'True'}) + ')'
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'id': item['id'], 'watched': 'True', 'usercode': item['usercode']}) + ')'
 			contextMenuItems.append(('Watched',contextCmd))		
 		infoLabels['plot'] = plot
 		li = xbmcgui.ListItem(name)	
@@ -288,7 +288,7 @@ def handlerListTorrents():
 
 	
 def handlerSetWatchedKinopoisk():
-	kinopoiskplus.setWatched(_cookiesKinopoisk, _params['id'], eval(_params['watched']))
+	kinopoiskplus.setWatched(_cookiesKinopoisk, _params['id'], eval(_params['watched']), _params['usercode'])
 	if eval(_params['watched']):
 		updateDownloads(_params['id'],{'watched': True})
 	else:
