@@ -192,11 +192,10 @@ def handlerAutoPlay():
 	
 def handlerPlay():	
 	watchlog.setWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + _params['name'])
-	item = eval(_params['item'])	
+	item = eval(_params['item'])		
 	if not item['watched']:
-		_params.update({'watched': 'True'})
-		handlerSetWatchedKinopoisk()
-		del _params['watched']
+		xbmcgui.Dialog().ok('Player', 'Setting watched')
+		kinopoiskplus.setWatched(_cookiesKinopoisk, item['id'], True, item['usercode'])
 	util.play(_params['url'], _params['name'])
 	xbmc.executebuiltin("Container.Refresh()")
 	
@@ -268,14 +267,13 @@ def handlerListTorrents():
 				'handler': 'ListTorrent',
 				'hashString': hashString,
 				'torrentName': name,
-				'id': item['id']
+				'item': _params['item']
 			}
 		else:
 			params = {
 				'handler': 'MonitorTorrent',
 				'hashString': hashString,
-				'torrentName': name,
-				'id': item['id']
+				'torrentName': name
 			}
 			name = '[' + str(int(float(data['percentDone'])*100)) + '%] '  + name
 			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'FilterTorrent', 'hashString': hashString}) + ')'

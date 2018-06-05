@@ -82,10 +82,10 @@ def getFolderContent(pathCookies, folder):
 	session = initSession(pathCookies)	
 	content = session.get('https://www.kinopoisk.ru/mykp/movies/list/type/' + folder + '/').content
 	data = BeautifulSoup(content, "html.parser").find('ul',{'id': 'itemList'})
-	usercode, i = util.substr("user_code: '", "'",content)
 	result = []
 	for tag in data.find_all('li'):	
 		info = tag.find(class_='info').findAll('span')
+		usercode, i = util.substr("user_code: '", "'",str(tag))
 		item = {
 			'id': tag['data-id'],
 			'type': 'MOVIE', # SHOW/MOVIE
