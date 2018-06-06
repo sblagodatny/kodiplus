@@ -74,7 +74,7 @@ def getFolders(pathCookies):
 		name = name.get_text()
 		if ' (' in name:
 			name = name.split(' (')[0]
-		result.update({id: name})		
+		result.update({name.encode('utf8'): id})		
 	return result
 
 	
@@ -245,4 +245,18 @@ def setWatched(pathCookies,id,state,usercode='None'):
 		session.get("https://www.kinopoisk.ru/handler_vote.php" + '?' + urllib.urlencode(data))
 
 
-		
+def setFolder(pathCookies,id,folder,state):	
+	session = initSession(pathCookies)
+	session.headers['X-Requested-With']='XMLHttpRequest'
+	data = {
+		'token': getUserDetails(session)['xcsrftoken'],
+		'id_film': id
+	}
+	util.setCookie(session, '.kinopoisk.ru', '_csrf/csrf_token', data['token'])	
+	if state:
+		data['mode'] = 'add_film'
+		data['to_folder'] = folder
+	else:
+		data['mode'] = 'del_film'
+		data['from_folder'] = folder
+	session.get("https://www.kinopoisk.ru/handler_mustsee_ajax.php" + '?' + urllib.urlencode(data))

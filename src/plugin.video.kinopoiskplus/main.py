@@ -38,8 +38,9 @@ _watchedFolder = _addon.getSetting('watchedFolder')
 
 _cookiesKinopoisk = _dataFolder + '/cookiesKinopoisk'
 _cookiesRutracker = _dataFolder + '/cookiesRutracker'
+_folders = _dataFolder + '/folders'
+_downloads = _dataFolder + '/downloads'
 
-_refreshFlag = _path + '/refresh'
 
 
 reload(sys)  
@@ -68,7 +69,7 @@ def validateSettings():
 
 
 	
-def listContent(content, folder=-1):
+def listContent(content, folder='0'):
 	xbmcplugin.setContent(_handleId, 'movies')
 	for item in content:		
 		contextMenuItems = []
@@ -88,12 +89,10 @@ def listContent(content, folder=-1):
 		plot = plot + util.bold('Страна: ') + item['countries'] + "\n\n"
 		if item['watched']:
 			infoLabels['playcount'] = 1
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'item': item, 'watched': 'False'}) + ')'
-			contextMenuItems.append(('UnWatched',contextCmd))
 		else:
 			infoLabels['playCount'] = 0
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatchedKinopoisk', 'item': item, 'watched': 'True'}) + ')'
-			contextMenuItems.append(('Watched',contextCmd))		
+		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'WatchedAll', 'item': item}) + ')'
+		contextMenuItems.append(('Посмотрел',contextCmd))			
 		infoLabels['plot'] = plot
 		li = xbmcgui.ListItem(name)	
 		li.setArt({'thumb': kinopoiskplus.getThumb(item['id']), 'poster': kinopoiskplus.getPoster(item['id']), 'fanart': kinopoiskplus.getPoster(item['id'])})
@@ -102,10 +101,6 @@ def listContent(content, folder=-1):
 		params = {'item': item, 'handler': 'ListTorrents'}
 		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?' + urllib.urlencode(params), isFolder=True, listitem=li)
 	xbmcplugin.endOfDirectory(_handleId)
-
-	
-
-
 
 
 def handlerFilterTorrent():
@@ -155,11 +150,11 @@ def handlerListTorrent():
 		infoLabels = {}
 		if watchlog.isWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + name):
 			infoLabels['playcount'] = 1
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'item': _params['hashString'] + '|' + name, 'watched': 'false'}) + ')'
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Watched', 'item': _params['hashString'] + '|' + name, 'watched': 'false'}) + ')'
 			contextMenuItems.append(('UnWatched',contextCmd))
 		else:
 			infoLabels['playcount'] = 0
-			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'SetWatched', 'item': _params['hashString'] + '|' + name, 'watched': 'true'}) + ')'
+			contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'Watched', 'item': _params['hashString'] + '|' + name, 'watched': 'true'}) + ')'
 			contextMenuItems.append(('Watched',contextCmd))
 		item=xbmcgui.ListItem(name, iconImage=_pathImg + 'video.png')
 		item.addContextMenuItems(contextMenuItems, replaceItems=True)	
@@ -191,11 +186,7 @@ def handlerAutoPlay():
 				
 	
 def handlerPlay():	
-	watchlog.setWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + _params['name'])
-	item = eval(_params['item'])		
-	if not item['watched']:
-		xbmcgui.Dialog().ok('Player', 'Setting watched')
-		kinopoiskplus.setWatched(_cookiesKinopoisk, item['id'], True, item['usercode'])
+	watchlog.setWatched(_watchedFolder, _baseUrl, _params['hashString'] + '|' + _params['name'])	
 	util.play(_params['url'], _params['name'])
 	xbmc.executebuiltin("Container.Refresh()")
 	
@@ -209,7 +200,6 @@ def handlerAddTorrent():
 	dtorrents = []
 	if item['id'] in downloads.keys():
 		dtorrents = downloads[item['id']]['torrents'].values()
-	
 	if directors:
 		for i in range(0, len(directors)):
 			torrentsI = rutracker.search(_cookiesRutracker, item['title'] + ' ' + directors[i]['name'])
@@ -229,9 +219,11 @@ def handlerAddTorrent():
 	torrent = torrents[result]	
 	hashString = transmission.add(_transmissionUrl, torrent['url'], _cookiesRutracker)
 	if item['id'] not in downloads.keys():
-		downloads.update({item['id']: {'item': item, 'torrents': {} } })
+		downloads.update({item['id']: {'torrents': {} } })
 	downloads[item['id']]['torrents'][hashString] = torrent['name']
 	setDownloads(downloads)
+	kinopoiskplus.setFolder(_cookiesKinopoisk, item['id'], getFolder('Смотрю'), True)
+	kinopoiskplus.setFolder(_cookiesKinopoisk, item['id'], getFolder('Буду Смотреть'), False)	
 	xbmc.executebuiltin('Container.Refresh')
 	
 	
@@ -280,27 +272,31 @@ def handlerListTorrents():
 			contextMenuItems.append(('Filter',contextCmd))	
 		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'RemoveTorrent', 'id': item['id'], 'hashString': hashString}) + ')'
 		contextMenuItems.append(('Remove',contextCmd))	
-		item=xbmcgui.ListItem(name, iconImage=_pathImg + 'torrent.png')
-		item.addContextMenuItems(contextMenuItems, replaceItems=True)						
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=item)
-	item=xbmcgui.ListItem('Add Torrent', iconImage=_pathImg + 'addtorrent.png')		
+		li=xbmcgui.ListItem(name, iconImage=_pathImg + 'torrent.png')
+		li.addContextMenuItems(contextMenuItems, replaceItems=True)						
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=li)
+	li=xbmcgui.ListItem('Add Torrent', iconImage=_pathImg + 'addtorrent.png')		
 	params = {'handler': 'AddTorrent', 'item': _params['item']}
-	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=item)
+	xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=li)
 	xbmcplugin.endOfDirectory(_handleId)
 
 
 	
-def handlerSetWatchedKinopoisk():
-	item = eval(_params['item'])
-	kinopoiskplus.setWatched(_cookiesKinopoisk, item['id'], eval(_params['watched']), item['usercode'])
-	if eval(_params['watched']):
-		updateDownloads(item['id'],{'watched': True})
-	else:
-		updateDownloads(item['id'],{'watched': False})
+def handlerWatchedAll():
+	item = eval(_params['item'])	
+	kinopoiskplus.setFolder(_cookiesKinopoisk, item['id'], getFolder('Смотрю'), False)
+	if not item['watched']:
+		kinopoiskplus.setWatched(_cookiesKinopoisk, item['id'], True, item['usercode'])
+	downloads = getDownloads()
+	if item['id'] in downloads.keys():
+		for hashString in downloads[item['id']]['torrents'].keys():
+			transmission.remove(_transmissionUrl, hashString, True)
+	del downloads[item['id']]
+	setDownloads(downloads)	
 	xbmc.executebuiltin('Container.Refresh')	
 	
 	
-def handlerSetWatched():		
+def handlerWatched():		
 	if _params['watched'] == 'true':
 		watchlog.setWatched(_watchedFolder, _baseUrl, _params['item'])
 	else:
@@ -314,8 +310,11 @@ def handlerInfo():
 	if item['originalTitle'] is not None:
 		title = title + ' / ' + item['originalTitle']
 	details = kinopoiskplus.getDetails(_cookiesKinopoisk, item['id'])
-	if 'seasons' in details.keys():
-		title = title + ' [' + str(details['seasons']) + ']'
+	if item['type'] == 'SHOW':
+		if 'seasons' in details.keys():
+			title = title + ' (сезоны: ' + str(details['seasons']) + ')'
+		else:
+			title = title + ' (сезоны: 1)'
 	infoLabels = {}
 	infoLabels['plot'] = details['description']
 	li = xbmcgui.ListItem(title)	
@@ -323,58 +322,35 @@ def handlerInfo():
 	li.setInfo( type="Video", infoLabels=infoLabels )		
 	li.setCast(kinopoiskplus.getCast(_cookiesKinopoisk, item['id'],'actor'))
 	dialog = xbmcgui.Dialog()
-	ret = dialog.info(li)
-
-	
-#def handlerSeasons():
-#	data = kinopoiskplus.getSeasons(_cookiesKinopoisk, _params['id'])
-#	seasons = sorted(data.keys())
-#	values = []
-#	selected = []
-#	for i in range(0, len(seasons)):
-#		values.append('Сезон ' + str(seasons[i]))
-#		if data[seasons[i]]:
-#			selected.append(i)
-#	selectedNew = xbmcgui.Dialog().multiselect("Просмотренные Сезоны", values, preselect=selected)
-#	if selectedNew is None:
-#		return	
-#	xbmc.executebuiltin( "ActivateWindow(busydialog)" )
-#	for i in selectedNew:
-#		if i not in selected:
-#			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], True)
-#	for i in selected:
-#		if i not in selectedNew:
-#			kinopoiskplus.setSeasonWatched(_cookiesKinopoisk, _params['id'], seasons[i], False)		
-#	xbmc.executebuiltin( "Dialog.Close(busydialog)" )
-	
+	ret = dialog.info(li)	
 
 
-def handlerRecommendationResult():	
-	content = kinopoiskplus.getRecommended(_cookiesKinopoisk, eval(_params['criteria']))
-	listContent(content)
+#def handlerRecommendationResult():	
+#	content = kinopoiskplus.getRecommended(_cookiesKinopoisk, eval(_params['criteria']))
+#	listContent(content)
 	
 	
-def handlerRecommendation():
-	criteria = []
-	filters = kinopoiskplus.getRecommendedCriteria(_cookiesKinopoisk)
-	for filter in filters:
-		if filter['multiple']:
-			selected = xbmcgui.Dialog().multiselect(filter['displayName'], filter['values'], preselect=[])
-			if selected:
-				values = []
-				for i in selected:
-					values.append(filter['values'][i])
-				criteria.append({'param': filter['param'], 'values': values})	
-		else:
-			selected = xbmcgui.Dialog().select(filter['displayName'], filter['values'])			
-			if selected != -1:
-				criteria.append({'param': filter['param'], 'values': [filter['values'][selected]]})	
-	params = {
-		'handler': 'RecommendationResult',
-		'criteria': criteria
-	}
-	url=_baseUrl+'?' + urllib.urlencode( params )	
-	xbmc.executebuiltin("Container.Update(" + url + ")")
+#def handlerRecommendation():
+#	criteria = []
+#	filters = kinopoiskplus.getRecommendedCriteria(_cookiesKinopoisk)
+#	for filter in filters:
+#		if filter['multiple']:
+#			selected = xbmcgui.Dialog().multiselect(filter['displayName'], filter['values'], preselect=[])
+#			if selected:
+#				values = []
+#				for i in selected:
+#					values.append(filter['values'][i])
+#				criteria.append({'param': filter['param'], 'values': values})	
+#		else:
+#			selected = xbmcgui.Dialog().select(filter['displayName'], filter['values'])			
+#			if selected != -1:
+#				criteria.append({'param': filter['param'], 'values': [filter['values'][selected]]})	
+#	params = {
+#		'handler': 'RecommendationResult',
+#		'criteria': criteria
+#	}
+#	url=_baseUrl+'?' + urllib.urlencode( params )	
+#	xbmc.executebuiltin("Container.Update(" + url + ")")
 
 
 	
@@ -411,22 +387,21 @@ def handlerSearch():
 			
 	
 def getDownloads():
-	path = _dataFolder + '/downloads'
-	if not os.path.isfile(path):
+	if not os.path.isfile(_downloads):
 		return {}
-	downloads = util.fileToObj(path)	
+	downloads = util.fileToObj(_downloads)	
 	hashStrings = []
 	data = transmission.get(_transmissionUrl)
 	for row in data:
 		hashStrings.append(row['hashString'])
 	changed = False
-	for download in downloads.values():
-		for hashString in download['torrents'].keys():
+	for id in downloads.keys():
+		for hashString in downloads[id]['torrents'].keys():
 			if hashString not in hashStrings:
-				del downloads[download['item']['id']]['torrents'][hashString]
+				del downloads[id]['torrents'][hashString]
 				changed = True
-		if not downloads[download['item']['id']]['torrents']:
-			del downloads[download['item']['id']]
+		if not downloads[id]['torrents']:
+			del downloads[id]
 	if changed:
 		setDownloads(downloads)
 	return downloads
@@ -443,28 +418,11 @@ def updateDownloads(id, data):
 	downloads[id]['item'].update(data)
 	setDownloads(downloads)
 	
-	
-def handlerDownloads():
-	content = []
-	downloads = getDownloads()
-	for id, data in downloads.iteritems():
-		content.append(data['item'])
-	listContent(content)
 
-def handlerFolders():
-	folders = kinopoiskplus.getFolders(_cookiesKinopoisk)
-	for id, name in folders.iteritems():
-		params = {
-			'handler': 'ListFolder',
-			'folder': id
-		}
-		item=xbmcgui.ListItem(name, iconImage=_pathImg + 'Folder.png')
-		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=item)
-	xbmcplugin.endOfDirectory(_handleId)
 	
 def handlerListFolder():
 	content = kinopoiskplus.getFolderContent(_cookiesKinopoisk, _params['folder'])
-	listContent(content)
+	listContent(content, _params['folder'])
 	
 	
 
@@ -478,14 +436,25 @@ def loginRutracker():
 		return
 	rutracker.login(_cookiesRutracker, _rutrackerUser, _rutrackerPassword)
 	
+def getFolder(name):
+	folders = util.fileToObj(_folders)
+	return folders.get(name,'None')
+	
 	
 def handlerRoot():	
 	loginKinopoisk()
 	loginRutracker()
+	folders = kinopoiskplus.getFolders(_cookiesKinopoisk)
+	util.objToFile(folders,_folders)	
+	for name, id in folders.iteritems():
+		params = {
+			'handler': 'ListFolder',
+			'folder': id
+		}
+		item=xbmcgui.ListItem(name, iconImage=_pathImg + 'Folder.png')
+		xbmcplugin.addDirectoryItem(handle=_handleId, url=_baseUrl+'?'+urllib.urlencode(params), isFolder=True, listitem=item)
 	rootLinks = [		
-		{'name': 'Загрузки', 'urlParams': {'handler': 'Downloads'}, 'icon': _pathImg+'Downloads.png'},
-		{'name': 'Избранное', 'urlParams': {'handler': 'Folders'}, 'icon': _pathImg+'Folders.png'},
-		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': _pathImg+'Search.png'},
+		{'name': 'Поиск', 'urlParams': {'handler': 'Search'}, 'icon': _pathImg+'Search.png'}
 #		{'name': 'Рекоммендация', 'urlParams': {'handler': 'Recommendation'}, 'icon': _pathImg+'Recommendation.png'}
 	]
 	for rootLink in rootLinks:
