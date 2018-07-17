@@ -288,18 +288,20 @@ def play(url, title, headers=None, forceKodiPlayer=False):
 		return
 	if xbmc.getCondVisibility('system.platform.android'):
 		cmd=[
-			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',
-			'--es','title',unicode(title)
+#			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',
+#			'--es','title',unicode(title)
+			'am','start','-n','org.videolan.vlc.gui.video.VideoPlayerActivity','-d',url,'--es','title',unicode(title)
 		]
-		if headers is not None:
-			headersS = ''
-			empty = True
-			for key, value in headers.iteritems():
-				headersS = headersS + key + ',' + value + ','
-				empty = False
-			if not empty:
-				headersS = headersS[:-1]
-				cmd = cmd + ['--esa', 'headers', headersS]
+
+#		if headers is not None:
+#			headersS = ''
+#			empty = True
+#			for key, value in headers.iteritems():
+#				headersS = headersS + key + ',' + value + ','
+#				empty = False
+#			if not empty:
+#				headersS = headersS[:-1]
+#				cmd = cmd + ['--esa', 'headers', headersS]
 	elif xbmc.getCondVisibility("system.platform.windows"):
 		cmd=[
 			'C:/Program Files/VideoLAN/VLC/vlc.exe','--meta-title=' + unicode(title), url
