@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.iptv'
-version = '1.16'
+addon = 'plugin.video.youtubeplus'
+version = '1.12'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
 
-<addon id="plugin.video.youtubeplus" version="1.11" name="YouTube+" provider-name="Stas Blagodatny">
+<addon id="plugin.video.youtubeplus" version="1.12" name="YouTube+" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>
@@ -16,7 +16,7 @@
 </extension>
 </addon>
 
-<addon id="plugin.image.gphotos" version="1.5" name="Google Photos" provider-name="Stas Blagodatny">
+<addon id="plugin.image.gphotos" version="1.6" name="Google Photos" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>
@@ -31,7 +31,7 @@
 </extension>
 </addon>
 
-<addon id="plugin.video.kinopoiskplus" version="1.23" name="КиноПоиск+" provider-name="Stas Blagodatny">
+<addon id="plugin.video.kinopoiskplus" version="1.24" name="КиноПоиск+" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>
@@ -75,7 +75,7 @@
 </addon>
 
 
-<addon id="plugin.video.tvarchive" version="1.22" name="TV Archive" provider-name="Stas Blagodatny">
+<addon id="plugin.video.tvarchive" version="1.23" name="TV Archive" provider-name="Stas Blagodatny">
 	<requires>
 		<import addon="xbmc.python" version="2.7.10"/>
 		<import addon="script.module.requests"/>
@@ -138,7 +138,7 @@
 </addon>
 
 
-<addon id="plugin.video.mediabrowser" version="1.1" name="Media Browser" provider-name="Stas Blagodatny">
+<addon id="plugin.video.mediabrowser" version="1.2" name="Media Browser" provider-name="Stas Blagodatny">
 <requires>
   <import addon="xbmc.python" version="2.7.10"/>
   <import addon="script.module.requests"/>

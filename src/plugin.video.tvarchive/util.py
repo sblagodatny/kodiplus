@@ -303,11 +303,20 @@ def xmltvParse(epgFile):
 def play(url, title):
 	if xbmc.getCondVisibility('system.platform.android'):
 		cmd=[
-			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,
-			'--es','title',unicode(title),
-#			'--esa', 'User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36',
-			'--activity-clear-task','--user','0'
+#			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',
+#			'--es','title',unicode(title)
+			'am','start','-n','org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity','-d',url,'--es','title',unicode(title)
 		]
+
+#		if headers is not None:
+#			headersS = ''
+#			empty = True
+#			for key, value in headers.iteritems():
+#				headersS = headersS + key + ',' + value + ','
+#				empty = False
+#			if not empty:
+#				headersS = headersS[:-1]
+#				cmd = cmd + ['--esa', 'headers', headersS]
 	elif xbmc.getCondVisibility("system.platform.windows"):
 		cmd=[
 			'C:/Program Files/VideoLAN/VLC/vlc.exe','--meta-title=' + unicode(title), url
