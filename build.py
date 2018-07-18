@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.tvarchive'
-version = '1.24'
+addon = 'plugin.program.google'
+version = '1.2'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon

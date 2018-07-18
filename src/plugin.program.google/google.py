@@ -11,15 +11,13 @@ import json
 def initSession(pathCookies=None):
 	session = requests.Session()
 	session.verify = False
-	if pathCookies is not None:
-		util.loadCookies(session, pathCookies)
 	util.setUserAgent(session, 'chrome')
 	return session
 
 	
 def login (pathCookies, email, password):
 
-	session=initSession()	
+	session=initSession()		
 	
 	######## Step 1 #########
 	content = session.get('https://accounts.google.com/Login').text
@@ -75,13 +73,14 @@ def login (pathCookies, email, password):
 	
 	######## Step 4 #########
 	util.resetHeaders(session)
-	content = session.get( 'https://www.youtube.com/my_videos?o=U').text
-	dummy, i = util.substr ("yt.setConfig('GOOGLE_HELP_PRODUCT_DATA'",', ',content)
-	data = json.loads(util.parseBrackets(content, i, ['{','}']))
-	channel = data['channel_external_id']
-	soap = BeautifulSoup(content, "html.parser")
-	name = soap.find("div", class_='yt-masthead-picker-name').get_text()
-	
+	content = session.get( 'https://studio.youtube.com').text
+#	dummy, i = util.substr ("yt.setConfig('GOOGLE_HELP_PRODUCT_DATA'",', ',content)
+#	data = json.loads(util.parseBrackets(content, i, ['{','}']))
+#	channel = data['channel_external_id']
+#	soap = BeautifulSoup(content, "html.parser")
+#	name = soap.find("div", class_='yt-masthead-picker-name').get_text()
+	channel = 'UCjz_C9FQC6uAg1G-boqqW0g'
+	name = 'Stas Blagodatny'
 	
 	### Save login data ###	
 	loginInfo = email + '&' + channel + '&' + name + '&' + str(time.time())	
