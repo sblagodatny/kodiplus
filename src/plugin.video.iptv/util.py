@@ -290,7 +290,8 @@ def play(url, title, headers=None, forceKodiPlayer=False):
 		cmd=[
 #			'am','start','-n','com.mxtech.videoplayer.ad/.ActivityScreen','-d',url,'--user','0','--activity-clear-task',
 #			'--es','title',unicode(title)
-			'am','start','-n','org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity','-d',url,'--es','title',unicode(title)
+			'am','start','-n','org.videolan.vlc/org.videolan.vlc.gui.video.VideoPlayerActivity','-d',url,
+			'--user','0','--activity-clear-task','--es','title',unicode(title)
 		]
 
 #		if headers is not None:

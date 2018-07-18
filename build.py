@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.mediabrowser'
-version = '1.4'
+addon = 'plugin.video.iptv'
+version = '1.17'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
