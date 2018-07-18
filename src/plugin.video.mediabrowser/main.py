@@ -113,13 +113,8 @@ def handlerAutoPlay():
 				
 	
 def handlerPlay():
-	url = 'file:' + urllib.pathname2url(_params['path'])
+	url = 'file://' + urllib.pathname2url(_params['path'])
 	util.play(url,_params['name'])
-	
-	
-
-	
-	
 
 	
 
