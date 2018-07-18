@@ -7,7 +7,7 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.tvarchives'
+addon = 'plugin.video.tvarchive'
 version = '1.24'
 
 basePath = os.getcwd()
