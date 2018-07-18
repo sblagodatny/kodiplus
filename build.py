@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.youtubeplus'
-version = '1.12'
+addon = 'plugin.video.mediabrowser'
+version = '1.3'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
