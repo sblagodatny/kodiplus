@@ -142,8 +142,7 @@ def handlerListTorrent():
 		contextCmd = 'RunPlugin(' + _baseUrl+'?' + urllib.urlencode({'handler': 'AutoPlay', 'autoplayIndex': str(autoplayIndex)}) + ')'
 		contextMenuItems.append(('Auto Play',contextCmd))
 		path = os.path.abspath(_transmissionDownloadsFolder + file['name']).encode('utf8')
-		url = 'file:' + urllib.pathname2url(path)
-#		url = urllib.quote(path.replace("\\",'/'))
+		url = 'file://' + urllib.pathname2url(path)
 		name = util.fileName(urllib.unquote(url))		
 		if util.fileExt(path.lower()) not in ['avi','mkv','mp4']:
 			continue

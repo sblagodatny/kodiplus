@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.video.iptv'
-version = '1.17'
+addon = 'plugin.video.kinopoiskplus'
+version = '1.25'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
