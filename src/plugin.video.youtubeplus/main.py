@@ -105,12 +105,6 @@ def handlerPlaylistVideos():
 	listVideos(content)	
 	xbmcplugin.endOfDirectory(_handleId)		
 
-	
-def handlerMyVideos():	
-	content = youtube.getMyVideos(_cookiesFile)
-	listVideos(content)
-	xbmcplugin.endOfDirectory(_handleId)	
-
 
 def handlerMyPlaylists():	
 	content = youtube.getMyPlaylists(_cookiesFile)
@@ -166,8 +160,7 @@ def handlerSearch():
 def handlerRoot():
 	
 	### Build base list ###
-	items = [
-		{'name': 'My Videos', 'params': {'handler': 'MyVideos'}, 'thumb': 'myVideos.png'},
+	items = [		
 		{'name': 'My Playlists', 'params': {'handler': 'MyPlaylists'}, 'thumb': 'myPlaylists.png'},
 		{'name': 'Saved Playlists', 'params': {'handler': 'SavedPlaylists'}, 'thumb': 'savedPlaylists.png'},
 		{'name': 'Search Videos', 'params': {'handler': 'Search', 'handlerRedirect': 'SearchVideos'}, 'thumb': 'searchVideos.png'},

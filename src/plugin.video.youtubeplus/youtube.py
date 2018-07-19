@@ -25,50 +25,6 @@ def initSession(pathCookies):
 	return session
 
 	
-def getMyVideos(pathCookies):
-	session = initSession(pathCookies)	
-	result = []
-	content = session.get( youtubeUrl + 'my_videos' + '?' + urllib.urlencode({'o': 'U'})).text		
-	dummy, i = util.substr ('"VIDEO_LIST_DISPLAY_OBJECT"',':',content)	
-	if i is None:
-		return result
-	data = json.loads(util.parseBrackets(content, i, ['[',']']))
-	for item in data:
-		soup = BeautifulSoup(util.unescape(item['html'].decode('utf-8')), "html.parser")	
-		ptag = soup.find(class_="vm-video-indicators")	
-		content = {
-			'id': item['id'],
-			'name': soup.find(class_="vm-video-title-content").get_text(),		
-			'thumb': videoImage(item['id']),			
-			'duration': '',
-			'publishedTime': '',
-			'viewCount': '',
-			'owner': 'You',
-			'privacy': 'Public',		
-		}
-		if not ptag.find(class_='vm-unlisted').parent.has_attr('aria-hidden'):
-			content['privacy'] = 'Private'
-		if not ptag.find(class_='vm-private').parent.has_attr('aria-hidden'):
-			content['privacy'] = 'Private'
-		try: 
-			content['duration'] = soup.find(class_="video-time").get_text()
-		except: 
-			continue	
-		try: 
-			content['publishedTime'] = soup.find(class_='localized-date').get_text().replace(' at','')			
-		except: 
-			None
-		try: 
-			content['viewCount'] = soup.find(class_='vm-video-side-view-count').get_text().replace(' views','').replace(' view','').replace("\n",'').replace(' ','')			
-		except: 
-			None
-		
-		
-		
-		result.append(content)
-		
-	return (result)
-	
 	
 def getMyPlaylists(pathCookies):
 	session = initSession(pathCookies)	
@@ -100,7 +56,7 @@ def getSavedPlaylists(pathCookies):
 			count = ''
 		result.append({
 			'id': item['gridPlaylistRenderer']['playlistId'], 			
-			'name': item['gridPlaylistRenderer']['title']['simpleText'],		
+			'name': item['gridPlaylistRenderer']['title']['runs'][0]['text'],		
 			'thumb': item['gridPlaylistRenderer']['thumbnail']['thumbnails'][0]['url'],
 			'count': count,
 			'privacy': 'Public',

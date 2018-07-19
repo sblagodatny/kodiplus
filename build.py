@@ -7,8 +7,8 @@ import hashlib
 import sys
 
 
-addon = 'plugin.program.google'
-version = '1.2'
+addon = 'plugin.video.youtubeplus'
+version = '1.13'
 
 basePath = os.getcwd()
 addonSrcPath = basePath + '/src/' + addon
