@@ -17,7 +17,7 @@ def login(pathCookies, user, password):
 	session=initSession()	
 	## Step 1 ##
 	data = {'retPath': 'https://www.kinopoisk.ru'}
-	content = BeautifulSoup(session.get('https://plus.kinopoisk.ru/embed/login/', data=data).content, "html.parser")
+	content = BeautifulSoup(session.get('https://auth.kinopoisk.ru/embed/login/', data=data).content, "html.parser")
 	data = json.loads(content.find(class_="i-bem")['data-bem'])
 	xcsrf = data['page']['csrf']
 	## Step 2 ##
@@ -25,7 +25,7 @@ def login(pathCookies, user, password):
 	session.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8'
 	session.headers['X-Requested-With']='XMLHttpRequest'
 	data={'login': user, 'password': password}
-	reply = json.loads(session.post("https://plus.kinopoisk.ru/user/resolve-by-password", data=data).content)
+	reply = json.loads(session.post("https://auth.kinopoisk.ru/user/resolve-by-password", data=data).content)
 	if reply['status'] != 'ok':
 		raise Exception('Invalid credentials')					
 	## Save ##
