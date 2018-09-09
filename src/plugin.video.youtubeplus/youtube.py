@@ -175,11 +175,9 @@ def getPlayer(session, id):
 	
 	
 def getCipher(session, player):
-	playerJS = session.get( youtubeUrl + player.get("assets", {}).get("js")).text	
-	function, dummy = util.substr ('"signature":"sig"','(',playerJS)
-	function = function.split('=')[1]
+	playerJS = session.get( youtubeUrl + player.get("assets", {}).get("js")).text
 	jsi = JSInterpreter(playerJS)
-	return jsi.extract_function(function)
+	return jsi.extract_function('IK')
 	
 	
 def getStreams(id, pathCookies):	
